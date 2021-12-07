@@ -10,12 +10,10 @@ const positions = readFileSync("07.txt").toString().split(",").map(Number);
  */
 function getFuelForPositionA(position) {
   return positions.reduce((acc, value) => {
-    if (value > position) {
-      return value - position + acc;
-    } else if (value === position) {
+    if (value === position) {
       return acc;
     } else {
-      return position - value + acc;
+      return Math.abs(position - value) + acc;
     }
   }, 0);
 }
@@ -41,12 +39,10 @@ assert.strictEqual(moveToFuel(2), 3);
  */
 function getFuelForPositionB(position) {
   return positions.reduce((acc, value) => {
-    if (value > position) {
-      return moveToFuel(value - position) + acc;
-    } else if (value === position) {
+    if (value === position) {
       return acc;
     } else {
-      return moveToFuel(position - value) + acc;
+      return moveToFuel(Math.abs(position - value)) + acc;
     }
   }, 0);
 }
@@ -54,33 +50,29 @@ function getFuelForPositionB(position) {
 const min = Math.min(...positions);
 const max = Math.max(...positions);
 
-function partA() {
-  console.group("Part A");
-
+/**
+ * @param {Function} func
+ * @returns {number}
+ */
+function compute(func) {
   const result = {};
 
   for (let p = min; p < max; p++) {
-    result[p] = getFuelForPositionA(p);
+    result[p] = func(p);
   }
 
-  const minFuel = Math.min(...Object.values(result));
+  return Math.min(...Object.values(result));
+}
 
-  console.log(minFuel);
+function partA() {
+  console.group("Part A");
+  console.log(compute(getFuelForPositionA));
   console.groupEnd();
 }
 
 function partB() {
   console.group("Part B");
-
-  const result = {};
-
-  for (let p = min; p < max; p++) {
-    result[p] = getFuelForPositionB(p);
-  }
-
-  const minFuel = Math.min(...Object.values(result));
-
-  console.log(minFuel);
+  console.log(compute(getFuelForPositionB));
   console.groupEnd();
 }
 
