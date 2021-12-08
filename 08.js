@@ -7,15 +7,6 @@ const four = "tl,tr,m,br".split(",");
 const seven = "t,tr,br".split(",");
 const eight = "t,tl,tr,m,bl,br,b".split(",");
 
-const zero = "t,tl,tr,bl,br,b".split(",");
-const two = "t,tr,m,bl,b".split(",");
-const three = "t,tr,m,br,b".split(",");
-const five = "t,tl,m,br,b".split(",");
-const six = "t,tl,m,bl,br,b".split(",");
-const nine = "t,tl,tr,m,br,b".split(",");
-
-const allNumbers = [one, two, three, four, five, six, seven, eight, nine, zero];
-
 const partA = readFileSync("08.txt")
   .toString()
   .split("\n")
@@ -33,20 +24,7 @@ const partB = readFileSync("08.txt")
 
 console.log("Part B", partB);
 
-//   .map((line) => {
-//     const [signalPaterns, digitsOuptut] = line.split(" | ");
-//     return {
-//       signalPaterns: signalPaterns.split(" "),
-//       digitsOuptut: digitsOuptut.split(" "),
-//     };
-//   });
-// .filter((chunk) => [one.length, four.length, seven.length, eight.length].includes(chunk.length)).length;
-
-// console.log(partB);
-//
-
 /**
- *
  * @param {string} line
  * @returns {string}
  */
@@ -57,16 +35,7 @@ function getDigits(line) {
 
   const mapping = getMapping(paterns);
 
-  // console.log(digits);
-  // console.log(mapping);
-
-  // console.log(digits.map((d) => mapping.findIndex((v) => v === d)));
-
   return digits.map((d) => mapping.findIndex((v) => v === d).toString()).join("");
-
-  // console.log(mapping);
-
-  // return .pop().split(" ").map(getDigit).join("");
 }
 
 function sortStr(str) {
@@ -74,7 +43,6 @@ function sortStr(str) {
 }
 
 /**
- *
  * @param {string[]} paterns
  */
 function getMapping(paterns) {
@@ -88,9 +56,6 @@ function getMapping(paterns) {
 
   const t = sevenPatern.split("").find((c) => !onePatern.includes(c));
 
-  console.log(
-    paterns.filter((n) => n.length === 6 && n.includes(t)).find((n) => fourPatern.split("").every((c) => n.includes(c)))
-  );
   const ninePatern = paterns
     .filter((patern) => patern.length === 6)
     .find((patern) => fourPatern.split("").every((c) => patern.includes(c)))
@@ -118,8 +83,6 @@ function getMapping(paterns) {
   const zeroPatern = paterns.find((p) => p.length === 6 && p !== ninePatern && p !== sixPatern);
   const threePatern = paterns.find((p) => p.length === 5 && p !== twoPatern && p !== fivePatern);
 
-  // const zeroPatern = paterns.find((n) => n.length === 6 && !n.includes(m));
-
   return [
     sortStr(zeroPatern),
     sortStr(onePatern),
@@ -138,4 +101,3 @@ assert.strictEqual(
   getDigits("acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"),
   "5353"
 );
-// console.log(getDigits("acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"));
