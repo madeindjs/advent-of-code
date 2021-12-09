@@ -71,23 +71,6 @@ console.log("Part A", partA(realGrid));
 
 ///
 
-/**
- *
- * @param {*} grid
- * @param {Point} point
- * @param {(Point) => Point} move
- */
-function getBassinInDirection(grid, point, move) {
-  console.log(point);
-  let current = move(point);
-
-  if (isValidPoint()) {
-    return 0;
-  } else {
-    return 1 + getBassinInDirection(grid, current, move);
-  }
-}
-
 function isValidPoint(grid, point) {
   return grid[point.y] !== undefined && ![undefined, 9].includes(grid[point.y][point.x]);
 }
@@ -108,8 +91,6 @@ function getNearPoints(grid, point, visited) {
     { x, y: y - 1 },
   ];
 
-  const near = []
-
   for (const p of points) {
     if (visited.some((from) => from.x === p.x && from.y === p.y)) {
       continue;
@@ -122,61 +103,24 @@ function getNearPoints(grid, point, visited) {
   }
 
   return visited;
-
-
-  return [
-    { x: x - 1, y },
-    { x: x + 1, y },
-    { x, y: y + 1 },
-    { x, y: y - 1 },
-  ]
-    .filter((p) => !visited.some((from) => from.x === p.x && from.y === p.y))
-    .filter((p) => isValidPoint(grid, p))
-    .flatMap((p) => [...visited, ...getNearPoints(grid, p, [...visited, point])]);
 }
 
 function getBassin(grid, point) {
   return getNearPoints(grid, point, [point]).reduce((acc, p) => {
-
     if (!acc.some((from) => from.x === p.x && from.y === p.y)) {
-      acc.push(p)
+      acc.push(p);
     }
 
     return acc;
   }, []);
-
-  // const uniq = []
 }
 
 function partB(grid) {
-  const bassins = [];
-
-  let res = 0;
-
-
-  // return getLowestPoint(grid)
-  //   .map((point) => getBassin(grid, point).length)
-  //   .reduce((acc, v) => acc * v, 1);
-
-  for (const point of getLowestPoint(grid)) {
-    const bassin = getBassin(grid, point);
-    bassins.push(bassin.length)
-
-    // res = res === 0 ? bassin.length : bassin.length * res;
-
-    // bassins.push(bassinTop + bassinBottom + bassinLeft + bassinRight);
-  }
-  // console.log(bassins);
-
-  return bassins
-      .sort((a, b) => b - a)
-      .slice(0, 3)
-      .reduce((acc, v) => acc * v, 1)
-  ;
-
-  return bassins.sort().slice(0, 3).reduce((acc, v) => acc*v, 1)
-
-  return res;
+  return getLowestPoint(grid)
+    .map((p) => getBassin(grid, p).length)
+    .sort((a, b) => b - a)
+    .slice(0, 3)
+    .reduce((acc, v) => acc * v, 1);
 }
 assert.strictEqual(partB(testGrid), 1134);
 
