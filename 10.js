@@ -1,6 +1,5 @@
 // @ts-check
 const assert = require("assert");
-const { getFips } = require("crypto");
 const { readFileSync } = require("fs");
 
 const getLines = (file) => readFileSync(file).toString().split("\n");
@@ -67,7 +66,7 @@ console.log("Part A", partA("10.txt"));
 /**
  * @param {string} line
  */
-function compleClosingChar(line) {
+function completeClosingChar(line) {
   let position = 0;
 
   const stack = [];
@@ -111,10 +110,10 @@ function compleClosingChar(line) {
   return "";
 }
 
-assert.strictEqual(compleClosingChar("[({(<(())[]>[[{[]{<()<>>"), "}}]])})]");
-assert.strictEqual(compleClosingChar("[(()[<>])]({[<{<<[]>>("), ")}>]})");
-assert.strictEqual(compleClosingChar("(((({<>}<{<{<>}{[]{[]{}"), "}}>}>))))");
-assert.strictEqual(compleClosingChar("{<[[]]>}<{[{[{[]{()[[[]"), "]]}}]}]}>");
+assert.strictEqual(completeClosingChar("[({(<(())[]>[[{[]{<()<>>"), "}}]])})]");
+assert.strictEqual(completeClosingChar("[(()[<>])]({[<{<<[]>>("), ")}>]})");
+assert.strictEqual(completeClosingChar("(((({<>}<{<{<>}{[]{[]{}"), "}}>}>))))");
+assert.strictEqual(completeClosingChar("{<[[]]>}<{[{[{[]{()[[[]"), "]]}}]}]}>");
 // assert.strictEqual(compleClosingChar("[(()[<>])]({[<{<<[]>>("), ")}>]})");
 
 /**
@@ -122,23 +121,23 @@ assert.strictEqual(compleClosingChar("{<[[]]>}<{[{[{[]{()[[[]"), "]]}}]}]}>");
  * @param {string} line
  */
 function getScore(line) {
-  let score = 0n;
+  let score = 0;
 
   for (const char of line) {
-    score = score * 5n;
+    score = score * 5;
 
     switch (char) {
       case ")":
-        score += 1n;
+        score += 1;
         break;
       case "]":
-        score += 2n;
+        score += 2;
         break;
       case "}":
-        score += 3n;
+        score += 3;
         break;
       case ">":
-        score += 4n;
+        score += 4;
         break;
     }
   }
@@ -146,21 +145,23 @@ function getScore(line) {
   return score;
 }
 
-assert.strictEqual(getScore("}}]])})]"), 288957n);
-assert.strictEqual(getScore(")}>]})"), 5566n);
+assert.strictEqual(getScore("}}]])})]"), 288957);
+assert.strictEqual(getScore(")}>]})"), 5566);
+assert.strictEqual(getScore("]]}}]}]}>"), 995444);
+assert.strictEqual(getScore("])}>"), 294);
 
 function partB(file) {
-  const scores = getLines(file).map(compleClosingChar).map(getScore);
-  console.log(scores.sort((a, b) => Number(a - b))[Math.round((scores.length + 1) / 2)]);
+  const scores = getLines(file).map(completeClosingChar).filter(c => c).map(getScore);
+  console.log(scores)
+  return scores.sort((a, b) => b - a)[scores.length / 2];
 
   while (scores.length > 0) {
-    console.log(scores)
-    scores.pop()
-    scores.shift()
+    console.log(scores);
+    scores.pop();
+    scores.shift();
   }
 
-  console.log(scores.length)
-
+  console.log(scores.length);
 }
 
 // console.log(getLines("10.test.txt").map(findClosingChar));
@@ -169,3 +170,5 @@ console.log("Part B", partB("10.txt"));
 // not 1216349671
 // not 1542093438
 // not 1186608909
+// not 5805183582
+// not 96291822
