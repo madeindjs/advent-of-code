@@ -25,11 +25,25 @@ function parseFile(file) {
   return { coordinates, folds };
 }
 
-function partA(file) {
-  let { coordinates, folds } = parseFile(file);
+/**
+ * @param {Point[]} points
+ * @returns {Point[]}
+ */
+function uniqPoints(points) {
+  return points.reduce((acc, point) => {
+    if (acc.some(({ x, y }) => x === point.x && y === point.y)) {
+      return acc;
+    }
+    return [...acc, point];
+  }, []);
+}
 
-  const fold = folds.shift();
-
+/**
+ * @param {Point[]} coordinates
+ * @param {string} fold
+ * @returns {Point[]}
+ */
+function makeFold(coordinates, fold) {
   const axe = Number(fold.substring(2));
 
   if (fold.startsWith("x=")) {
@@ -42,12 +56,7 @@ function partA(file) {
       }
     }
 
-    coordinates = coordinates.reduce((acc, point) => {
-      if (acc.some(({ x, y }) => x === point.x && y === point.y)) {
-        return acc;
-      }
-      return [...acc, point];
-    }, []);
+    coordinates = uniqPoints(coordinates);
   } else if (fold.startsWith("y=")) {
     coordinates = coordinates.filter(({ y }) => y !== axe);
 
@@ -55,34 +64,24 @@ function partA(file) {
       if (coordinate.y > axe) {
         const move = (coordinate.y - axe) * 2;
         coordinate.y -= move;
-        // coordinates[i] = coordinate;
       }
     }
 
-    coordinates = coordinates.reduce((acc, point) => {
-      if (acc.some(({ x, y }) => x === point.x && y === point.y)) {
-        return acc;
-      }
-      return [...acc, point];
-    }, []);
+    coordinates = uniqPoints(coordinates);
   }
 
-  // const debugL = (l) =>
-  //   console.log(
-  //     `p on y=${l}`,
-  //     coordinates.filter(({ y }) => y === l)
-  //   );
+  return coordinates;
+}
 
-  // debugL(0);
-  // debugL(1);
-  // debugL(2);
-  // debugL(3);
-  // debugL(4);
+function partA(file) {
+  let { coordinates, folds } = parseFile(file);
+
+  const fold = folds.shift();
+  coordinates = makeFold(coordinates, fold);
 
   return coordinates.length;
 }
 
-// partA();
 strictEqual(partA("13.test.txt"), 17);
 strictEqual(partA("13.txt"), 653);
 console.log("Part A", partA("13.txt"));
