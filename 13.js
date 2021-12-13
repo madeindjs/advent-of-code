@@ -82,6 +82,34 @@ function partA(file) {
   return coordinates.length;
 }
 
+function partB(file) {
+  let { coordinates, folds } = parseFile(file);
+
+  for (const fold of folds) {
+    coordinates = makeFold(coordinates, fold);
+  }
+
+  const maxX = Math.max(...coordinates.map(({ x }) => x));
+  const maxY = Math.max(...coordinates.map(({ y }) => y));
+
+  for (let y = 0; y <= maxY; y++) {
+    let line = "";
+    for (let x = 0; x <= maxX; x++) {
+      if (coordinates.some((p) => p.x === x && p.y === y)) {
+        line = `${line}#`;
+      } else {
+        line = `${line}.`;
+      }
+    }
+    console.log(line);
+  }
+
+  return coordinates;
+}
+
 strictEqual(partA("13.test.txt"), 17);
 strictEqual(partA("13.txt"), 653);
 console.log("Part A", partA("13.txt"));
+
+partB("13.txt");
+// LKREBPRK
