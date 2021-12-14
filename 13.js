@@ -98,7 +98,7 @@ function partB(file) {
       if (coordinates.some((p) => p.x === x && p.y === y)) {
         line = `${line}#`;
       } else {
-        line = `${line}.`;
+        line = `${line} `;
       }
     }
     console.log(line);

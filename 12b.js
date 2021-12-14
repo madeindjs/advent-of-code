@@ -2,7 +2,6 @@
 // @ts-check
 const { readFileSync } = require("fs");
 
-const map = new Map();
 
 /**
  * @typedef {{current: string, smallCaves: [], length: number}} Path
@@ -11,7 +10,7 @@ const map = new Map();
 /**
  * @type {Array<Array<string>>}
  */
-const paths = readFileSync("12.txt")
+const paths = readFileSync("12.test.txt")
   .toString()
   .split("\n")
   .map((line) => line.split("-"));
@@ -27,7 +26,7 @@ paths.forEach(([a, b]) => {
     nextPaths.set(a, [...mA, b]);
   }
 
-  const mB = nextPaths.get(a);
+  const mB = nextPaths.get(b);
 
   if (mB === undefined) {
     nextPaths.set(b, [a]);
@@ -35,6 +34,10 @@ paths.forEach(([a, b]) => {
     nextPaths.set(b, [...mB, a]);
   }
 });
+
+console.log(nextPaths);
+
+const smallCaves
 
 /**
  * @param {string} node
@@ -73,7 +76,7 @@ function getNextNodes(path) {
 
 function start() {
   /** @type {Path[]} */
-  const stack = [{ current: "start", smallCaves: [], length: 1 }];
+  const stack = new Set();
   let results = 0;
 
   const start = new Date().getTime();
