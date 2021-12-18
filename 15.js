@@ -8,14 +8,12 @@ const getGrid = (file) =>
     .split("\n")
     .map((line) => line.split("").map(Number))
     .reduce((acc, row, y) => {
-      row.forEach((value, x) => {
-        acc[`${x},${y}`] = value;
-      });
+      row.forEach((value, x) => acc.set(`${x},${y}`, value));
       return acc;
-    }, {});
+    }, new Map());
 
 /**
- * @typedef {{[point: string]: number}} Grid
+ * @typedef {Map<string, number>} Grid
  */
 
 /**
@@ -26,7 +24,7 @@ const getGrid = (file) =>
 function getNeighbors(grid, point) {
   const [x, y] = point.split(",").map(Number);
 
-  return [`${x - 1},${y}`, `${x + 1},${y}`, `${x},${y - 1}`, `${x},${y + 1}`].filter((p) => grid[p] !== undefined);
+  return [`${x - 1},${y}`, `${x + 1},${y}`, `${x},${y - 1}`, `${x},${y + 1}`].filter((p) => grid.has(p));
 }
 
 /**
@@ -35,7 +33,7 @@ function getNeighbors(grid, point) {
  * @param {string} to
  */
 function dijkstra(grid, from, to) {
-  const unvisited = new Set(Object.keys(grid));
+  const unvisited = new Set(grid.keys());
   console.time("dijkstra");
 
   /** @type {Map<string, {distance: number, previous: string}>} */
@@ -69,7 +67,6 @@ function dijkstra(grid, from, to) {
   while (unvisited.size) {
     const { point, distance } = getNext();
     console.timeLog("dijkstra", `rest ${unvisited.size}`);
-    // const { distance } = table.get(point);
 
     const neighbors = getNeighbors(grid, point).filter((p) => unvisited.has(p));
 
@@ -79,7 +76,7 @@ function dijkstra(grid, from, to) {
     }
 
     for (const neighbor of neighbors) {
-      const newDistance = distance + grid[neighbor];
+      const newDistance = distance + grid.get(neighbor);
 
       const previousDistance = table.get(neighbor)?.distance;
 
@@ -102,7 +99,9 @@ function dijkstra(grid, from, to) {
 function partA(file) {
   const grid = getGrid(file);
 
-  return dijkstra(grid, Object.keys(grid).shift(), Object.keys(grid).pop());
+  const points = Array.from(grid.keys());
+
+  return dijkstra(grid, points.shift(), points.pop());
 }
 
 strictEqual(partA("15.test.txt"), 40);
@@ -133,20 +132,20 @@ strictEqual(computeValueOffset(1, 9), 1);
  * @returns {Grid}
  */
 function increaseGrid(grid) {
-  const [maxX, maxY] = Object.keys(grid).pop().split(",").map(Number);
+  const [maxX, maxY] = Array.from(grid.keys()).pop().split(",").map(Number);
 
   /** @type {Grid} */
-  const newGrid = {};
+  const newGrid = new Map();
 
   for (let xOffset = 0; xOffset < 5; xOffset++) {
     for (let yOffset = 0; yOffset < 5; yOffset++) {
-      for (const point of Object.keys(grid)) {
-        const value = grid[point];
+      for (const point of grid.keys()) {
+        const value = grid.get(point);
         const newValue = computeValueOffset(value, xOffset + yOffset);
         const [x, y] = point.split(",").map(Number);
         const newPoint = `${x + xOffset * (maxX + 1)},${y + yOffset * (maxY + 1)}`;
 
-        newGrid[newPoint] = newValue;
+        newGrid.set(newPoint, newValue);
       }
     }
   }
@@ -154,24 +153,11 @@ function increaseGrid(grid) {
   return newGrid;
 }
 
-function displayGrid(grid) {
-  const [maxX, maxY] = Object.keys(grid).pop().split(",").map(Number);
-
-  for (let y = 0; y <= maxY; y++) {
-    let str = "";
-    for (let x = 0; x <= maxX; x++) {
-      str += grid[`${x},${y}`];
-    }
-
-    console.log(str);
-  }
-}
-
 function partB(file) {
   const grid = increaseGrid(getGrid(file));
-  // displayGrid(grid);
+  const points = Array.from(grid.keys());
 
-  return dijkstra(grid, Object.keys(grid).shift(), Object.keys(grid).pop());
+  return dijkstra(grid, points.shift(), points.pop());
 }
 
 strictEqual(partB("15.test.txt"), 315);
