@@ -49,10 +49,11 @@ function replace(start, couples) {
   return start;
 }
 
-function partA(file) {
+function count(file, loop) {
   let { start, couples } = parseFile(file);
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < loop; i++) {
+    console.log(`loop ${i} (length: ${start.length})`);
     start = replace(start, couples);
   }
 
@@ -73,6 +74,14 @@ function partA(file) {
   // console.log(count);
 }
 
+function partA(file) {
+  return count(file, 10);
+}
+
+function partB(file) {
+  return count(file, 40);
+}
+
 const testCouples = parseFile("14.test.txt").couples;
 
 strictEqual(replace("NNCB", testCouples), "NCNBCHB");
@@ -81,4 +90,5 @@ strictEqual(replace("NCNBCHB", testCouples), "NBCCNBBBCBHCB");
 strictEqual(partA("14.test.txt"), 1588);
 
 console.log("Part A", partA("14.txt"));
+console.log("Part B", partB("14.txt"));
 // not 67
