@@ -1,8 +1,6 @@
 // @ts-check
 const { readFileSync } = require("fs");
 const { strictEqual } = require("assert");
-const { off } = require("process");
-const { assert } = require("console");
 
 const getGrid = (file) =>
   readFileSync(file)
@@ -18,7 +16,6 @@ const getGrid = (file) =>
 
 /**
  * @typedef {{[point: string]: number}} Grid
- * @typedef {{[point: string]: { distance: number, previous: string }}} Table
  */
 
 /**
@@ -41,48 +38,65 @@ function dijkstra(grid, from, to) {
   const unvisited = new Set(Object.keys(grid));
   console.time("dijkstra");
 
-  /** @type {Table} */
-  const table = {
-    [from]: { distance: 0, previous: from },
-  };
+  /** @type {Map<string, {distance: number, previous: string}>} */
+  const table = new Map();
+  table.set(from, { distance: 0, previous: from });
 
-  const getNext = () =>
-    Object.keys(table)
-      .filter((point) => unvisited.has(point))
-      .sort((a, b) => table[b].distance - table[a].distance)
-      .pop();
+  // const getNext = () =>
+  //   Array.from(unvisited.values())
+  //     .filter((point) => table.has(point))
+  //     .sort((a, b) => table.get(b).distance - table.get(a).distance)
+  //     .pop();
+
+  function getNext() {
+    let point;
+    let currentDistance;
+
+    for (const [distancePoint, { distance }] of table) {
+      if ((currentDistance === undefined || distance <= currentDistance) && unvisited.has(distancePoint)) {
+        point = distancePoint;
+        currentDistance = distance;
+      }
+    }
+
+    if (point === undefined) {
+      throw Error("cannot find next point");
+    }
+
+    return { point, distance: currentDistance };
+  }
 
   while (unvisited.size) {
-    const current = getNext();
+    const { point, distance } = getNext();
     console.timeLog("dijkstra", `rest ${unvisited.size}`);
-    const { distance } = table[current];
+    // const { distance } = table.get(point);
 
-    const neighbors = getNeighbors(grid, current).filter((p) => unvisited.has(p));
+    const neighbors = getNeighbors(grid, point).filter((p) => unvisited.has(p));
 
     if (neighbors.length === 0) {
-      unvisited.delete(current);
+      unvisited.delete(point);
       continue;
     }
 
     for (const neighbor of neighbors) {
       const newDistance = distance + grid[neighbor];
 
-      const previousDistance = table[neighbor]?.distance;
+      const previousDistance = table.get(neighbor)?.distance;
 
       if (previousDistance === undefined || newDistance < previousDistance) {
-        table[neighbor] = {
-          previous: current,
+        table.set(neighbor, {
+          previous: point,
           distance: newDistance,
-        };
+        });
       }
     }
 
-    unvisited.delete(current);
+    unvisited.delete(point);
   }
 
   console.timeEnd("dijkstra");
 
-  return table[to]?.distance;
+  return table.get(to)?.distance;
 }
 
 function partA(file) {
