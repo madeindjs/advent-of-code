@@ -1,109 +1,141 @@
-// Not works cauz' too long :'(
 // @ts-check
+const { strictEqual, ok } = require("assert");
+const { assert } = require("console");
 const { readFileSync } = require("fs");
 
+function partB(file) {
+  /**
+   * @type {Array<Array<string>>}
+   */
+  const paths = readFileSync(file)
+    .toString()
+    .split("\n")
+    .map((line) => line.split("-"));
 
-/**
- * @typedef {{current: string, smallCaves: [], length: number}} Path
- */
-
-/**
- * @type {Array<Array<string>>}
- */
-const paths = readFileSync("12.test.txt")
-  .toString()
-  .split("\n")
-  .map((line) => line.split("-"));
-
-const nextPaths = new Map();
-
-paths.forEach(([a, b]) => {
-  const mA = nextPaths.get(a);
-
-  if (mA === undefined) {
-    nextPaths.set(a, [b]);
-  } else {
-    nextPaths.set(a, [...mA, b]);
+  /**
+   * @param {string} node
+   */
+  function isSmallCave(node) {
+    return node !== "start" && node !== "end" && node.toLowerCase() === node;
   }
 
-  const mB = nextPaths.get(b);
+  const smallCaves = paths
+    .flatMap((a) => a)
+    .reduce((acc, p) => {
+      if (isSmallCave(p) && !acc.includes(p)) {
+        acc.push(p);
+      }
 
-  if (mB === undefined) {
-    nextPaths.set(b, [a]);
-  } else {
-    nextPaths.set(b, [...mB, a]);
-  }
-});
+      return acc;
+    }, []);
 
-console.log(nextPaths);
+  /**
+   *
+   * @param {string} node
+   * @param {string[]} path
+   * @returns {boolean}
+   */
+  function canBeNextNode(node, path) {
+    if (node === "start") {
+      return false;
+    }
 
-const smallCaves
+    const haveVisitedSmallCaveTwice = smallCaves.some((sC) => path.filter((n) => n === sC).length > 1);
 
-/**
- * @param {string} node
- */
-function isSmallCave(node) {
-  return node !== "start" && node !== "end" && node.toLowerCase() === node;
-}
+    if (isSmallCave(node)) {
+      return haveVisitedSmallCaveTwice ? !path.includes(node) : true;
 
-/**
- *
- * @param {string} node
- * @param {Path} path
- * @returns {boolean}
- */
-function canBeNextNode(node, path) {
-  if (node === "start") {
-    return false;
-  }
+      //  return false;
+    }
 
-  if (isSmallCave(node) && path.smallCaves.filter((n) => n === node).length === 2) {
-    return false;
+    return true;
   }
 
-  return true;
-}
+  /**
+   * @param {string[]} path
+   * @returns {string[]}
+   */
+  function getNextNodes(path) {
+    const node = path[path.length - 1];
 
-/**
- * @param {Path} path
- * @returns {string[]}
- */
-function getNextNodes(path) {
-  const node = path.current;
+    return (
+      paths
+        // is connected
+        .filter(([a, b]) => a === node || b === node)
+        // dont include reverse path
+        .map(([a, b]) => (a === node ? b : a))
+        .filter((next) => canBeNextNode(next, path))
+    );
+  }
 
-  return nextPaths.get(node).filter((next) => canBeNextNode(next, path));
-}
-
-function start() {
-  /** @type {Path[]} */
-  const stack = new Set();
-  let results = 0;
-
-  const start = new Date().getTime();
+  const stack = [["start"]];
+  const results = [];
 
   while (stack.length !== 0) {
     const path = stack.shift();
 
-    const nextNodes = getNextNodes(path);
-
-    for (const nextNode of nextNodes) {
-      const smallCaves = isSmallCave(nextNode) ? [...path.smallCaves, nextNode] : [...path.smallCaves];
-      /** @type {Path} */
-      const nextPath = { current: nextNode, length: path.length + 1, smallCaves };
+    for (const nextNode of getNextNodes(path)) {
+      const nextPath = [...path, nextNode];
 
       if (nextNode === "end") {
-        const time = Math.round((new Date().getTime() - start) / 1000);
-        console.log(`${results} -  (${time}s) (stack: ${stack.length})`);
-        // results.push(nextPath);
-        results++;
+        results.push(nextPath.join(","));
+        // console.log("found this path", nextPath.join(","));
       } else {
         stack.push(nextPath);
       }
     }
   }
 
-  console.log("Total path", results);
-  // console.timeEnd();
+  return results;
 }
 
-start();
+const testResult = partB("12.test.txt");
+
+const expectedTestsResult = [
+  "start,A,b,A,b,A,c,A,end",
+  "start,A,b,A,b,A,end",
+  "start,A,b,A,b,end",
+  "start,A,b,A,c,A,b,A,end",
+  "start,A,b,A,c,A,b,end",
+  "start,A,b,A,c,A,c,A,end",
+  "start,A,b,A,c,A,end",
+  "start,A,b,A,end",
+  "start,A,b,d,b,A,c,A,end",
+  "start,A,b,d,b,A,end",
+  "start,A,b,d,b,end",
+  "start,A,b,end",
+  "start,A,c,A,b,A,b,A,end",
+  "start,A,c,A,b,A,b,end",
+  "start,A,c,A,b,A,c,A,end",
+  "start,A,c,A,b,A,end",
+  "start,A,c,A,b,d,b,A,end",
+  "start,A,c,A,b,d,b,end",
+  "start,A,c,A,b,end",
+  "start,A,c,A,c,A,b,A,end",
+  "start,A,c,A,c,A,b,end",
+  "start,A,c,A,c,A,end",
+  "start,A,c,A,end",
+  "start,A,end",
+  "start,b,A,b,A,c,A,end",
+  "start,b,A,b,A,end",
+  "start,b,A,b,end",
+  "start,b,A,c,A,b,A,end",
+  "start,b,A,c,A,b,end",
+  "start,b,A,c,A,c,A,end",
+  "start,b,A,c,A,end",
+  "start,b,A,end",
+  "start,b,d,b,A,c,A,end",
+  "start,b,d,b,A,end",
+  "start,b,d,b,end",
+  "start,b,end",
+];
+
+expectedTestsResult.forEach((expectedPath) =>
+  ok(testResult.includes(expectedPath), `result not include ${expectedPath}`)
+);
+
+testResult.forEach((result) => ok(expectedTestsResult.includes(result), `result have this path in trop ${result}`));
+
+strictEqual(testResult.length, 36);
+
+console.log(partB("12.txt").length);
