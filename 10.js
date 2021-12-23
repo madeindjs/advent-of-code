@@ -33,8 +33,6 @@ function findClosingChar(line) {
     const lastCouple = stack.pop();
 
     if (char !== lastCouple.end) {
-      // console.log(char);
-      // return lastCouple.p;
       return couples.find(({ end, start }) => end === char || start === char).p;
     } else {
       position++;
@@ -43,8 +41,6 @@ function findClosingChar(line) {
 
   return 0;
 }
-
-// assert.throws(() => , );
 
 assert.strictEqual(findClosingChar("{(<>)}"), 0);
 assert.strictEqual(findClosingChar("{<}"), 1197);
@@ -55,11 +51,9 @@ function partA(file) {
     .reduce((a, b) => a + b, 0);
 }
 
-// console.log(getLines("10.test.txt").map(findClosingChar));
 assert.strictEqual(partA("10.test.txt"), 26397);
 console.log("Part A", partA("10.txt"));
 
-// console.log();
 
 // ----
 
@@ -82,19 +76,11 @@ function completeClosingChar(line) {
       continue;
     }
 
-    // console.log(stack)
-
     const lastCouple = stack.pop();
 
     if (char !== lastCouple.end) {
-      // console.log(char);
-      // return lastCouple.p;
-      return lastCouple.end.concat(
-        stack
-          .reverse()
-          .map(({ end }) => end)
-          .join("")
-      );
+      // corrupted line, ignore
+      return "";
     } else {
       position++;
     }
@@ -114,7 +100,8 @@ assert.strictEqual(completeClosingChar("[({(<(())[]>[[{[]{<()<>>"), "}}]])})]");
 assert.strictEqual(completeClosingChar("[(()[<>])]({[<{<<[]>>("), ")}>]})");
 assert.strictEqual(completeClosingChar("(((({<>}<{<{<>}{[]{[]{}"), "}}>}>))))");
 assert.strictEqual(completeClosingChar("{<[[]]>}<{[{[{[]{()[[[]"), "]]}}]}]}>");
-// assert.strictEqual(compleClosingChar("[(()[<>])]({[<{<<[]>>("), ")}>]})");
+assert.strictEqual(completeClosingChar("<{([{{}}[<[[[<>{}]]]>[]]"), "])}>");
+assert.strictEqual(completeClosingChar("<[()()]{}>"), "");
 
 /**
  *
@@ -152,23 +139,8 @@ assert.strictEqual(getScore("])}>"), 294);
 
 function partB(file) {
   const scores = getLines(file).map(completeClosingChar).filter(c => c).map(getScore);
-  console.log(scores)
-  return scores.sort((a, b) => b - a)[scores.length / 2];
-
-  while (scores.length > 0) {
-    console.log(scores);
-    scores.pop();
-    scores.shift();
-  }
-
-  console.log(scores.length);
+  return scores.sort((a, b) => b - a)[Math.floor(scores.length / 2)];
 }
 
-// console.log(getLines("10.test.txt").map(findClosingChar));
-// assert.strictEqual(partA("10.test.txt"), 26397);
+assert.strictEqual(partB("10.test.txt"), 288957);
 console.log("Part B", partB("10.txt"));
-// not 1216349671
-// not 1542093438
-// not 1186608909
-// not 5805183582
-// not 96291822
