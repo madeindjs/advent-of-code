@@ -23,8 +23,8 @@ fs.readFileSync("./02.txt")
         position.depth -= move.qty;
         break;
     }
-    console.log(position)
+    // console.log(position)
   });
 
-console.log(position);
+// console.log(position);
 console.log(position.horizontal * position.depth)

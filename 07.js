@@ -23,10 +23,13 @@ function getFuelForPositionA(position) {
  * @return {number}
  */
 function moveToFuel(move) {
-  return new Array(move)
-    .fill()
-    .map((_, i) => i + 1)
-    .reduce((acc, v) => acc + v, 0);
+  let count = 0;
+
+  for (let i = 1; i <= move; i++) {
+    count += i;
+  }
+
+  return count;
 }
 
 assert.strictEqual(moveToFuel(0), 0);
