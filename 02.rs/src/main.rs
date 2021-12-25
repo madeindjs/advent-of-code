@@ -12,10 +12,15 @@ struct Move {
     qty: usize,
 }
 
-#[derive(Debug)]
 struct Position {
     horizontal: usize,
     depth: usize,
+}
+
+struct Position2 {
+    horizontal: usize,
+    depth: usize,
+    aim: usize,
 }
 
 fn get_move(path: &str) -> Vec<Move> {
@@ -65,7 +70,28 @@ fn part_a(path: &str) -> usize {
     position.horizontal * position.depth
 }
 
+fn part_b(path: &str) -> usize {
+    let mut position = Position2 {
+        horizontal: 0,
+        depth: 0,
+        aim: 0,
+    };
+
+    for movement in get_move(path).iter() {
+        match movement.direction {
+            Direction::Forward => {
+                position.horizontal += movement.qty;
+                position.depth += position.aim * movement.qty;
+            },
+            Direction::Down => position.aim += movement.qty,
+            Direction::Up => position.aim -= movement.qty,
+        }
+    }
+
+    position.horizontal * position.depth
+}
+
 fn main() {
     println!("PartA! {:?}", part_a("../02.txt"));
-    // println!("PartB! {}", part_b("../02.txt"));
+    println!("PartB! {}", part_b("../02.txt"));
 }
