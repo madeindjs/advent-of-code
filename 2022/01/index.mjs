@@ -1,16 +1,17 @@
-import { readFile } from "fs/promises";
+import { createReadStream } from "fs";
 import assert from "node:assert";
+import readline from "readline";
 
 /**
- * @param {string[]} lines
- * @return {number[]}
+ * @param {readline.Interface} lines
+ * @return {Promise<number[]>}
  */
-function getGuys(lines) {
+async function getGuys(lines) {
   /** @type {number[]} */
   const guys = [];
   let i = 0;
 
-  for (const line of lines) {
+  for await (const line of lines) {
     if (line === "") {
       i++;
       continue;
@@ -28,8 +29,8 @@ function getGuys(lines) {
  * @returns {Promise<number>}
  */
 async function mainA(file) {
-  const lines = await readFile(file).then((buff) => buff.toString("utf-8").split("\n"));
-  const guys = getGuys(lines);
+  const lines = readline.createInterface({ input: createReadStream(file) });
+  const guys = await getGuys(lines);
 
   return Math.max(...guys);
 }
@@ -39,9 +40,10 @@ async function mainA(file) {
  * @returns {Promise<number>}
  */
 async function mainB(file) {
-  const lines = await readFile(file).then((buff) => buff.toString("utf-8").split("\n"));
+  const lines = readline.createInterface({ input: createReadStream(file) });
+  const guys = await getGuys(lines);
 
-  return getGuys(lines)
+  return guys
     .sort()
     .slice(0, 3)
     .reduce((a, b) => a + b, 0);

@@ -1,18 +1,13 @@
-import { readFile } from "fs/promises";
+import { createReadStream } from "fs";
 import assert from "node:assert";
-
-/**
- * @param {string} file
- * @returns {Promise<string[]>}
- */
-const readLines = (file) => readFile(file).then((buff) => buff.toString("utf-8").split("\n"));
+import readline from "readline";
 
 /**
  * @param {string} file
  * @returns {Promise<number>}
  */
 async function mainA(file) {
-  const lines = await readLines(file);
+  const lines = readline.createInterface({ input: createReadStream(file) });
   return 0;
 }
 
@@ -21,7 +16,7 @@ async function mainA(file) {
  * @returns {Promise<number>}
  */
 async function mainB(file) {
-  const lines = await readLines(file);
+  const lines = readline.createInterface({ input: createReadStream(file) });
   return 0;
 }
 
@@ -33,7 +28,7 @@ async function main() {
   console.log("result A", resultA);
 
   const testB = await mainB("spec.txt");
-  assert.strictEqual(testB, 0);
+  assert.strictEqual(testB, 45000);
 
   const resultB = await mainB("input.txt");
   console.log("result B", resultB);
