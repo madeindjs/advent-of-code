@@ -40,27 +40,11 @@ async function mainA(file) {
  */
 async function mainB(file) {
   const lines = await readFile(file).then((buff) => buff.toString("utf-8").split("\n"));
-  const guys = getGuys(lines);
 
-  return getTop3Max(guys);
-}
-
-/**
- * @param {number[]} results
- * @returns {number}
- */
-function getTop3Max(results) {
-  const resultsCopy = [...results];
-
-  const getMaxAndRemove = () => {
-    const max = Math.max(...resultsCopy);
-    const i = resultsCopy.findIndex((r) => r === max);
-    resultsCopy[i] = 0;
-
-    return max;
-  };
-
-  return [getMaxAndRemove(), getMaxAndRemove(), getMaxAndRemove()].reduce((a, b) => a + b, 0);
+  return getGuys(lines)
+    .sort()
+    .slice(0, 3)
+    .reduce((a, b) => a + b, 0);
 }
 
 async function main() {
