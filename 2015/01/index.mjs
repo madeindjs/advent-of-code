@@ -1,6 +1,6 @@
-import fs from "fs";
+import { readFileSync } from "fs";
 
-const content = fs.readFileSync("input.txt").toString("utf-8");
+const content = readFileSync("input.txt").toString("utf-8");
 
 let chars = content.split("");
 
