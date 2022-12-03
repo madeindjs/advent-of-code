@@ -21,17 +21,11 @@ async function mainB(file) {
 }
 
 async function main() {
-  const testA = await mainA("spec.txt");
-  assert.strictEqual(testA, 0);
+  assert.strictEqual(await mainA("spec.txt"), 0);
+  console.log("result A", await mainA("input.txt"));
 
-  const resultA = await mainA("input.txt");
-  console.log("result A", resultA);
-
-  const testB = await mainB("spec.txt");
-  assert.strictEqual(testB, 45000);
-
-  const resultB = await mainB("input.txt");
-  console.log("result B", resultB);
+  assert.strictEqual(await mainB("spec.txt"), 0);
+  console.log("result B", await mainB("input.txt"));
 }
 
 main().catch(console.error);

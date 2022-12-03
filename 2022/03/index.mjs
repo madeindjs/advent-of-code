@@ -2,19 +2,7 @@ import { createReadStream } from "fs";
 import assert from "node:assert";
 import readline from "readline";
 
-// class Rucksack {
-//   /** @var {string} */
-//   #content;
-//   /**
-//    * @param {string} content
-//    */
-//   constructor(content) {
-//     this.#content = content;
-//   }
-// }
-
 /**
- *
  * @param {string} string
  * @returns {[string, string]}
  */
@@ -47,7 +35,7 @@ async function mainA(file) {
   for await (const line of readline.createInterface({ input: createReadStream(file) })) {
     const [compartment1, compartment2] = splitString(line).map((s) => s.split(""));
 
-    const duplicate = compartment1.find((item1) => compartment2.some((item2) => item2 === item1));
+    const duplicate = compartment1.find((item1) => compartment2.includes(item1));
     if (duplicate === undefined) throw Error();
 
     result += getPriority(duplicate);
@@ -57,19 +45,41 @@ async function mainA(file) {
 
 /**
  * @param {string} file
+ * @return {AsyncGenerator<string[][], void, unknown>}
+ */
+async function* getGroups(file) {
+  let current = [];
+  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+    current.push(line.split(""));
+
+    if (current.length === 3) {
+      yield current;
+      current = [];
+    }
+  }
+}
+
+/**
+ * @param {string} file
  * @returns {Promise<number>}
  */
 async function mainB(file) {
-  const lines = readline.createInterface({ input: createReadStream(file) });
-  return 0;
+  let result = 0;
+  for await (const [compartment1, compartment2, compartment3] of getGroups(file)) {
+    const badge = compartment1.find((c1) => compartment2.includes(c1) && compartment3.includes(c1));
+    if (badge === undefined) throw Error();
+
+    result += getPriority(badge);
+  }
+  return result;
 }
 
 async function main() {
   assert.strictEqual(await mainA("spec.txt"), 157);
   console.log("result A", await mainA("input.txt"));
 
-  // assert.strictEqual(await mainB("spec.txt"), 0);
-  // console.log("result B", await mainB("input.txt"));
+  assert.strictEqual(await mainB("spec.txt"), 70);
+  console.log("result B", await mainB("input.txt"));
 }
 
 main().catch(console.error);
