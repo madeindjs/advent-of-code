@@ -7,7 +7,8 @@ import readline from "readline";
  * @returns {Promise<number>}
  */
 async function mainA(file) {
-  const lines = readline.createInterface({ input: createReadStream(file) });
+  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  }
   return 0;
 }
 
@@ -16,7 +17,8 @@ async function mainA(file) {
  * @returns {Promise<number>}
  */
 async function mainB(file) {
-  const lines = readline.createInterface({ input: createReadStream(file) });
+  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  }
   return 0;
 }
 
