@@ -1,6 +1,5 @@
 import { readFileSync } from "fs";
 import assert from "node:assert";
-import readline from "readline";
 
 /**
  * @param {string} stackScheme
@@ -39,15 +38,15 @@ assert.deepEqual(
 function parseMove(line) {
   const matches = /move ([0-9]+) from ([0-9]+) to ([0-9]+)/.exec(line);
   if (!matches) throw Error();
-  return { from: Number(matches[2]), to: Number(matches[3]), qty: Number(matches[1]) };
+  return { from: Number(matches[2]) - 1, to: Number(matches[3]) - 1, qty: Number(matches[1]) };
 }
-assert.deepEqual(parseMove("move 1 from 2 to 3"), { from: 2, to: 3, qty: 1 });
+assert.deepEqual(parseMove("move 1 from 2 to 3"), { from: 1, to: 2, qty: 1 });
 
 /**
  * @param {string} file
- * @returns {Promise<string>}
+ * @returns {string}
  */
-async function mainA(file) {
+function mainA(file) {
   const content = readFileSync(file).toString("utf-8");
 
   const [stacksScheme, moves] = content.split("\n\n");
@@ -57,8 +56,9 @@ async function mainA(file) {
     const { from, to, qty } = parseMove(line);
 
     new Array(qty).fill(undefined).forEach(() => {
-      const item = stacks[from - 1].pop();
-      stacks[to - 1].push(item);
+      const item = stacks[from].pop();
+      if (!item) throw Error;
+      stacks[to].push(item);
     });
   }
 
@@ -67,20 +67,30 @@ async function mainA(file) {
 
 /**
  * @param {string} file
- * @returns {Promise<number>}
+ * @returns {string}
  */
-async function mainB(file) {
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+function mainB(file) {
+  const content = readFileSync(file).toString("utf-8");
+
+  const [stacksScheme, moves] = content.split("\n\n");
+  const stacks = parseStacks(stacksScheme);
+
+  for (const line of moves.split("\n")) {
+    const { from, to, qty } = parseMove(line);
+
+    const items = stacks[from].splice(stacks[from].length - qty);
+    stacks[to].push(...items);
   }
-  return 0;
+
+  return stacks.map((stack) => stack[stack.length - 1]).join("");
 }
 
-async function main() {
-  assert.strictEqual(await mainA("spec.txt"), "CMZ");
-  console.log("result A", await mainA("input.txt"));
+function main() {
+  assert.strictEqual(mainA("spec.txt"), "CMZ");
+  console.log("result A", mainA("input.txt"));
 
-  // assert.strictEqual(await mainB("spec.txt"), 0);
-  // console.log("result B", await mainB("input.txt"));
+  assert.strictEqual(mainB("spec.txt"), "MCD");
+  console.log("result B", mainB("input.txt"));
 }
 
-main().catch(console.error);
+main();
