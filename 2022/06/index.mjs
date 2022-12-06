@@ -32,27 +32,6 @@ assert.strictEqual(findMarker("nppdvjthqldpwncqszvftbrmjlhg", 14), 23);
 assert.strictEqual(findMarker("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 14), 29);
 assert.strictEqual(findMarker("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 14), 26);
 
-/**
- * @param {string} file
- * @returns {number}
- */
-function mainA(file) {
-  const content = readFileSync(file).toString("utf-8");
-  return findMarker(content, 4);
-}
-
-/**
- * @param {string} file
- * @returns {number}
- */
-function mainB(file) {
-  const content = readFileSync(file).toString("utf-8");
-  return findMarker(content, 14);
-}
-
-function main() {
-  console.log("result A", mainA("input.txt"));
-  console.log("result B", mainB("input.txt"));
-}
-
-main();
+const content = readFileSync("input.txt").toString("utf-8");
+console.log("result A", findMarker(content, 4));
+console.log("result B", findMarker(content, 14));
