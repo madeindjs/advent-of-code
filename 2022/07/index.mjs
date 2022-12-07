@@ -86,16 +86,15 @@ function getSize(tree) {
 /**
  * @param {string} file
  */
-function main(file) {
+function mainA(file) {
   const lines = readFileSync(file).toString("utf-8").split("\n");
   const tree = buildTree(lines);
 
   const sizes = [];
 
-  for (const { path, node } of walk(tree)) {
+  for (const { node } of walk(tree)) {
     const size = getSize(node);
     sizes.push(size);
-    // console.log(path, size);
   }
 
   sizes.shift();
@@ -103,8 +102,37 @@ function main(file) {
   return sizes.filter((size) => size <= 100000).reduce((acc, v) => acc + v, 0);
 }
 
-assert.strictEqual(main("spec.txt"), 95437);
-const partA = main("input.txt");
+/**
+ * @param {string} file
+ */
+function mainB(file) {
+  const lines = readFileSync(file).toString("utf-8").split("\n");
+  const tree = buildTree(lines);
+
+  const totalSpace = 70000000;
+  const targetUnusedSpace = 30000000;
+
+  const sizes = [];
+
+  for (const { node } of walk(tree)) {
+    const size = getSize(node);
+    sizes.push(size);
+  }
+
+  const currentUsed = Number(sizes.shift());
+  const sizeToFree = targetUnusedSpace - (totalSpace - currentUsed);
+
+  return sizes.filter((size) => size >= sizeToFree).sort((a, b) => a - b)[0];
+}
+
+assert.strictEqual(mainA("spec.txt"), 95437);
+const partA = mainA("input.txt");
 
 console.log("part A", partA);
 assert.strictEqual(partA, 1770595);
+
+assert.strictEqual(mainB("spec.txt"), 24933642);
+const partB = mainB("input.txt");
+
+assert.strictEqual(partB, 2195372);
+console.log("part B", partB);
