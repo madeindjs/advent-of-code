@@ -4,7 +4,26 @@ import assert from "node:assert";
 /**
  * @typedef {number[][]} Map
  * @typedef {[number, number]} Point
+ * @typedef {(point: Point) => Point} Move
  */
+
+/**
+ * @param {string} file
+ * @return {Map}
+ */
+const loadMap = (file) =>
+  readFileSync(file)
+    .toString("utf-8")
+    .split("\n")
+    .map((line) => line.split("").map(Number));
+
+/** @type {Move[]} */
+const directions = [
+  ([px, py]) => [px - 1, py],
+  ([px, py]) => [px + 1, py],
+  ([px, py]) => [px, py - 1],
+  ([px, py]) => [px, py + 1],
+];
 
 /**
  * @param {Map} map
@@ -53,12 +72,7 @@ function getPointsInDirection(map, point, move) {
  * @param {string} file
  */
 function mainA(file) {
-  const map = readFileSync(file)
-    .toString("utf-8")
-    .split("\n")
-    .map((line) => line.split("").map(Number));
-
-  console.log(map);
+  const map = loadMap(file);
 
   const maxX = map.length - 1;
   const maxY = map[0].length - 1;
@@ -76,12 +90,7 @@ function mainA(file) {
     const isVisibleFromColumn = (move) =>
       !getPointsInDirection(map, point, move).some(([nX, nY]) => map[nX][nY] >= value);
 
-    if (
-      isVisibleFromColumn(([px, py]) => [px - 1, py]) ||
-      isVisibleFromColumn(([px, py]) => [px + 1, py]) ||
-      isVisibleFromColumn(([px, py]) => [px, py - 1]) ||
-      isVisibleFromColumn(([px, py]) => [px, py + 1])
-    ) {
+    if (directions.some(isVisibleFromColumn)) {
       count++;
     }
   }
@@ -90,22 +99,58 @@ function mainA(file) {
 }
 
 /**
+ * @param {Map} map
+ * @param {Point} point
+ * @return {number}
+ */
+function getScore(map, [x, y]) {
+  const value = map[x][y];
+
+  /**
+   * @param {Move} move
+   * @returns {number}
+   */
+  const getScoreInDirection = (move) => {
+    const points = getPointsInDirection(map, [x, y], move);
+    let seen = 0;
+
+    for (const [nx, ny] of points) {
+      seen++;
+      if (map[nx][ny] >= value) return seen;
+    }
+
+    return seen;
+  };
+
+  const pointScores = directions.map(getScoreInDirection);
+
+  return pointScores.reduce((acc, v) => acc * (v || 1), 1);
+}
+const testMap = loadMap("spec.txt");
+assert.strictEqual(getScore(testMap, [1, 2]), 4);
+assert.strictEqual(getScore(testMap, [3, 2]), 8);
+
+/**
  * @param {string} file
  */
 function mainB(file) {
-  const lines = readFileSync(file).toString("utf-8").split("\n");
+  const map = loadMap(file);
 
-  return 0;
+  let scores = [];
+
+  for (const point of walk(map)) {
+    scores.push(getScore(map, point));
+  }
+
+  return Math.max(...scores);
 }
 
 assert.strictEqual(mainA("spec.txt"), 21);
-const partA = mainA("input.txt");
 
+const partA = mainA("input.txt");
 console.log("part A", partA);
 assert.strictEqual(partA, 1711);
 
-// assert.strictEqual(mainB("spec.txt"), 24933642);
-// const partB = mainB("input.txt");
-
-// assert.strictEqual(partB, 2195372);
-// console.log("part B", partB);
+const partB = mainB("input.txt");
+console.log("part B", partB);
+assert.strictEqual(partB, 301392);
