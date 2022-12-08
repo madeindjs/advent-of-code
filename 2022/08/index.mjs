@@ -33,31 +33,6 @@ function isInsideMap(map, [x, y]) {
 /**
  * @param {Map} map
  * @param {Point} point
- * @return {number}
- */
-const getPointValue = (map, [x, y]) => map[x][y];
-
-/**
- * @param {Map} map
- * @param {Point} point
- * @return {Point[]}
- */
-function getNeighbors(map, [x, y]) {
-  return [
-    [x - 1, y - 1],
-    [x - 1, y],
-    [x - 1, y + 1],
-    [x, y - 1],
-    [x, y + 1],
-    [x + 1, y - 1],
-    [x + 1, y],
-    [x + 1, y + 1],
-  ].filter((point) => isInsideMap(map, point));
-}
-
-/**
- * @param {Map} map
- * @param {Point} point
  * @param {(point: Point) => Point} move
  * @return {Point[]}
  */
@@ -91,21 +66,12 @@ function mainA(file) {
   let count = 0;
 
   for (const point of walk(map)) {
-    // console.log(point);
     const [x, y] = point;
     const value = map[x][y];
 
-    // console.log("a", point, getNeighbors(map, point));
-    // for (const [nX, nY] of getNeighbors(map, point)) {
-    //   // console.log(point, [nX, nY]);
-    //   // const nValue = map[nX][nY];
-    // }
-
     if ([0, maxX].includes(x) || [0, maxY].includes(y)) {
-      // console.log("visible", point);
       count++;
       continue;
-      // } else if (!getNeighbors(map, point).some(([nX, nY]) => map[nX][nY] >= value)) {
     }
     const isVisibleFromColumn = (move) =>
       !getPointsInDirection(map, point, move).some(([nX, nY]) => map[nX][nY] >= value);
@@ -116,7 +82,6 @@ function mainA(file) {
       isVisibleFromColumn(([px, py]) => [px, py - 1]) ||
       isVisibleFromColumn(([px, py]) => [px, py + 1])
     ) {
-      // console.log("visible", point, value);
       count++;
     }
   }
@@ -137,7 +102,7 @@ assert.strictEqual(mainA("spec.txt"), 21);
 const partA = mainA("input.txt");
 
 console.log("part A", partA);
-// assert.strictEqual(partA, 21);
+assert.strictEqual(partA, 1711);
 
 // assert.strictEqual(mainB("spec.txt"), 24933642);
 // const partB = mainB("input.txt");
