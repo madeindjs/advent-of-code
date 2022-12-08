@@ -41,7 +41,6 @@ function* walk(map) {
 /**
  * @param {Map} map
  * @param {Point} point
- * @return {boolean}
  */
 function isInsideMap(map, [x, y]) {
   const maxX = map.length - 1;
@@ -52,20 +51,15 @@ function isInsideMap(map, [x, y]) {
 /**
  * @param {Map} map
  * @param {Point} point
- * @param {(point: Point) => Point} move
- * @return {Point[]}
+ * @param {Move} move
  */
-function getPointsInDirection(map, point, move) {
+function* getPointsInDirection(map, point, move) {
   let currentPoint = move(point);
 
-  let points = [];
-
   while (isInsideMap(map, currentPoint)) {
-    points.push(currentPoint);
+    yield currentPoint;
     currentPoint = move(currentPoint);
   }
-
-  return points;
 }
 
 /**
@@ -87,12 +81,14 @@ function mainA(file) {
       count++;
       continue;
     }
-    const isVisibleFromColumn = (move) =>
-      !getPointsInDirection(map, point, move).some(([nX, nY]) => map[nX][nY] >= value);
+    const isVisibleFromColumn = (move) => {
+      for (const [nX, nY] of getPointsInDirection(map, point, move)) {
+        if (map[nX][nY] >= value) return false;
+      }
+      return true;
+    };
 
-    if (directions.some(isVisibleFromColumn)) {
-      count++;
-    }
+    if (directions.some(isVisibleFromColumn)) count++;
   }
 
   return count;
@@ -111,10 +107,9 @@ function getScore(map, [x, y]) {
    * @returns {number}
    */
   const getScoreInDirection = (move) => {
-    const points = getPointsInDirection(map, [x, y], move);
     let seen = 0;
 
-    for (const [nx, ny] of points) {
+    for (const [nx, ny] of getPointsInDirection(map, [x, y], move)) {
       seen++;
       if (map[nx][ny] >= value) return seen;
     }
@@ -136,13 +131,14 @@ assert.strictEqual(getScore(testMap, [3, 2]), 8);
 function mainB(file) {
   const map = loadMap(file);
 
-  let scores = [];
+  let bestScore = 0;
 
   for (const point of walk(map)) {
-    scores.push(getScore(map, point));
+    const score = getScore(map, point);
+    if (score > bestScore) bestScore = score;
   }
 
-  return Math.max(...scores);
+  return bestScore;
 }
 
 assert.strictEqual(mainA("spec.txt"), 21);
