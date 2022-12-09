@@ -3,7 +3,6 @@ import assert from "node:assert";
 import readline from "readline";
 
 /**
- * @typedef {number[][]} Map
  * @typedef {[number, number]} Point
  * @typedef {(point: Point) => Point} Move
  */
@@ -47,36 +46,12 @@ assert.deepEqual(moveTail([2, 0], [0, 0]), [1, 0]);
 
 /**
  * @param {string} file
+ * @param {number}
  * @returns {Promise<number>}
  */
-async function mainA(file) {
-  /** @type {Point} */
-  let headPoint = [0, 0];
-  /** @type {Point} */
-  let tailPoint = [0, 0];
-
-  const tailVisits = new Set();
-
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
-    const [direction, qtyStr] = line.split(" ");
-    const qty = Number(qtyStr);
-
-    for (let index = 0; index < qty; index++) {
-      headPoint = moves[direction](headPoint);
-      tailPoint = moveTail(headPoint, tailPoint);
-      tailVisits.add(`${tailPoint[0]}*${tailPoint[1]}`);
-    }
-  }
-  return tailVisits.size;
-}
-
-/**
- * @param {string} file
- * @returns {Promise<number>}
- */
-async function mainB(file) {
+async function computeRope(file, size) {
   /** @type {Point[]} */
-  const rope = new Array(10).fill([0, 0]);
+  const rope = new Array(size).fill([0, 0]);
 
   const tailVisits = new Set();
 
@@ -92,7 +67,7 @@ async function mainB(file) {
           rope[index] = moveTail(rope[index - 1], rope[index]);
         }
 
-        if (index === 9) tailVisits.add(`${rope[index][0]}*${rope[index][1]}`);
+        if (index === size - 1) tailVisits.add(`${rope[index][0]}*${rope[index][1]}`);
       }
     }
   }
@@ -100,11 +75,11 @@ async function mainB(file) {
 }
 
 async function main() {
-  assert.strictEqual(await mainA("spec.txt"), 13);
-  console.log("result A", await mainA("input.txt"));
+  assert.strictEqual(await computeRope("spec.txt", 2), 13);
+  console.log("result A", await computeRope("input.txt", 2));
 
-  assert.strictEqual(await mainB("specb.txt"), 36);
-  console.log("result B", await mainB("input.txt"));
+  assert.strictEqual(await computeRope("specb.txt", 10), 36);
+  console.log("result B", await computeRope("input.txt", 10));
 }
 
 main().catch(console.error);
