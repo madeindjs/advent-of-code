@@ -12,8 +12,8 @@ import readline from "readline";
 const moves = {
   L: ([px, py]) => [px - 1, py],
   R: ([px, py]) => [px + 1, py],
-  U: ([px, py]) => [px, py - 1],
-  D: ([px, py]) => [px, py + 1],
+  U: ([px, py]) => [px, py + 1],
+  D: ([px, py]) => [px, py - 1],
 };
 
 /**
@@ -64,10 +64,6 @@ async function mainA(file) {
     for (let index = 0; index < qty; index++) {
       headPoint = moves[direction](headPoint);
       tailPoint = moveTail(headPoint, tailPoint);
-      // if (isTailTooFar(headPoint, tailPoint)) {
-      // } else {
-
-      // }
       tailVisits.add(`${tailPoint[0]}*${tailPoint[1]}`);
     }
   }
@@ -79,16 +75,35 @@ async function mainA(file) {
  * @returns {Promise<number>}
  */
 async function mainB(file) {
+  /** @type {Point[]} */
+  const rope = new Array(10).fill([0, 0]);
+
+  const tailVisits = new Set();
+
   for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+    const [direction, qtyStr] = line.split(" ");
+    const qty = Number(qtyStr);
+
+    for (let index = 0; index < qty; index++) {
+      for (let index = 0; index < rope.length; index++) {
+        if (index === 0) {
+          rope[index] = moves[direction](rope[index]);
+        } else {
+          rope[index] = moveTail(rope[index - 1], rope[index]);
+        }
+
+        if (index === 9) tailVisits.add(`${rope[index][0]}*${rope[index][1]}`);
+      }
+    }
   }
-  return 0;
+  return tailVisits.size;
 }
 
 async function main() {
   assert.strictEqual(await mainA("spec.txt"), 13);
   console.log("result A", await mainA("input.txt"));
 
-  assert.strictEqual(await mainB("spec.txt"), 0);
+  assert.strictEqual(await mainB("specb.txt"), 36);
   console.log("result B", await mainB("input.txt"));
 }
 
