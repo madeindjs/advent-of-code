@@ -29,15 +29,12 @@ const isTailTooFar = ([hx, hy], [tx, ty]) => ![hx, hx - 1, hx + 1].includes(tx) 
 function moveTail(headPoint, tailPoint) {
   if (!isTailTooFar(headPoint, tailPoint)) return tailPoint;
 
-  const newPoint = [...tailPoint];
-
-  [0, 1].forEach((axe) => {
-    if (headPoint[axe] > tailPoint[axe]) newPoint[axe]++;
-    if (headPoint[axe] < tailPoint[axe]) newPoint[axe]--;
-  });
-
   // @ts-ignore
-  return newPoint;
+  return [0, 1].map((axe) => {
+    if (headPoint[axe] > tailPoint[axe]) return tailPoint[axe] + 1;
+    if (headPoint[axe] < tailPoint[axe]) return tailPoint[axe] - 1;
+    return tailPoint[axe];
+  });
 }
 assert.deepEqual(moveTail([1, 1], [1, 1]), [1, 1]);
 assert.deepEqual(moveTail([1, 1], [0, 0]), [0, 0]);
@@ -47,12 +44,11 @@ assert.deepEqual(moveTail([2, 0], [0, 0]), [1, 0]);
 /**
  * @param {string} file
  * @param {number}
- * @returns {Promise<number>}
+ * @return {Promise<number>}
  */
 async function computeRope(file, size) {
   /** @type {Point[]} */
   const rope = new Array(size).fill([0, 0]);
-
   const tailVisits = new Set();
 
   for await (const line of readline.createInterface({ input: createReadStream(file) })) {
@@ -74,12 +70,8 @@ async function computeRope(file, size) {
   return tailVisits.size;
 }
 
-async function main() {
-  assert.strictEqual(await computeRope("spec.txt", 2), 13);
-  console.log("result A", await computeRope("input.txt", 2));
+assert.strictEqual(await computeRope("spec.txt", 2), 13);
+console.log("result A", await computeRope("input.txt", 2));
 
-  assert.strictEqual(await computeRope("specb.txt", 10), 36);
-  console.log("result B", await computeRope("input.txt", 10));
-}
-
-main().catch(console.error);
+assert.strictEqual(await computeRope("specb.txt", 10), 36);
+console.log("result B", await computeRope("input.txt", 10));
