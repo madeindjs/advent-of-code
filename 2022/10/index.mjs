@@ -19,15 +19,13 @@ function mainA(file) {
 
     for (let index = 0; index < wait; index++) {
       cycle++;
-      if (verb === "addx" && index === wait - 1) value += Number(qtyStr);
-
-      console.log(line);
-      console.log("##", { cycle, value, qtyStr, line });
 
       if ([20, 60, 100, 140, 180, 220].includes(cycle)) {
         checkpoints.push(value * cycle);
         console.log("##", { cycle, value, qtyStr, line });
       }
+
+      if (verb === "addx" && index === wait - 1) value += Number(qtyStr);
     }
   }
 
@@ -43,11 +41,11 @@ function mainB(file) {
   return 0;
 }
 
-assert.strictEqual(mainA("spec-small.txt"), 13140);
+// assert.strictEqual(mainA("spec-small.txt"), 13140);
 assert.strictEqual(mainA("spec.txt"), 13140);
-// const partA = mainA("input.txt");
+const partA = mainA("input.txt");
 // assert.ok(partA < 14560);
-// console.log("part A", partA);
+console.log("part A", partA);
 // assert.strictEqual(partA, 1770595);
 
 // assert.strictEqual(mainB("spec.txt"), 24933642);
