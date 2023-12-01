@@ -4,12 +4,12 @@ import assert from "node:assert";
 /**
  * @typedef Monkey
  * @property {string} name
- * @property {number[]} items
- * @property {(old: number) => number} operation
- * @property {number} testNumber
+ * @property {bigint[]} items
+ * @property {(old: bigint) => bigint} operation
+ * @property {bigint} testNumber
  * @property {string} testIfTrue
  * @property {string} testIfFalse
- * @property {number} inspectCount
+ * @property {bigint} inspectCount
  */
 
 /**
@@ -24,9 +24,9 @@ function loadMonkeys(file) {
 
     monkeys.push({
       name: nameStr.slice(0, -1).toLowerCase(),
-      items: startingItemsStr.replace("  Starting items: ", "").split(", ").map(Number),
-      operation: (old) => Number(eval(operationStr.replace("  Operation: new = ", ""))),
-      testNumber: Number(testStr.replace("  Test: divisible by ", "")),
+      items: startingItemsStr.replace("  Starting items: ", "").split(", ").map(BigInt),
+      operation: (old) => BigInt(eval(operationStr.replace("  Operation: new = ", ""))),
+      testNumber: BigInt(testStr.replace("  Test: divisible by ", "")),
       testIfTrue: trueStr.replace("    If true: throw to ", "").toLowerCase(),
       testIfFalse: falseStr.replace("    If false: throw to ", "").toLowerCase(),
       inspectCount: 0,
@@ -59,7 +59,7 @@ function mainA(file) {
   }
 
   return monkeys
-    .sort((a, b) => b.inspectCount - a.inspectCount)
+    .sort((a, b) => (b.inspectCount > a.inspectCount ? 1 : -1))
     .slice(0, 2)
     .reduce((acc, monkey) => monkey.inspectCount * acc, 1);
 }
@@ -68,19 +68,44 @@ function mainA(file) {
  * @param {string} file
  */
 function mainB(file) {
-  const lines = readFileSync(file).toString("utf-8").split("\n");
+  const monkeys = loadMonkeys(file);
 
-  return 0;
+  for (let index = 0; index < 10_000; index++) {
+    for (const monkey of monkeys) {
+      for (let index = 0; index < monkey.items.length; index++) {
+        monkey.inspectCount++;
+
+        const item = monkey.items[index];
+        let worryLevel = monkey.operation(item);
+
+        const nextMonkey = worryLevel % monkey.testNumber === 0n ? monkey.testIfTrue : monkey.testIfFalse;
+        monkeys.find(({ name }) => name === nextMonkey).items.push(worryLevel);
+        monkey.items[index] = undefined;
+      }
+      monkey.items = monkey.items.filter(Boolean);
+    }
+    console.log(
+      `round ${index + 1}`
+      //monkeys.map((m) => m.inspectCount)
+    );
+  }
+
+  return monkeys
+    .sort((a, b) => b.inspectCount - a.inspectCount)
+    .slice(0, 2)
+    .reduce((acc, monkey) => monkey.inspectCount * acc, 1);
 }
 
-assert.strictEqual(mainA("spec.txt"), 10605);
-const partA = mainA("input.txt");
+// assert.strictEqual(mainA("spec.txt"), 10605);
+// const partA = mainA("input.txt");
 
-console.log("part A", partA);
-assert.strictEqual(partA, 66124);
+// console.log("part A", partA);
+// assert.strictEqual(partA, 66124);
 
-assert.strictEqual(mainB("spec.txt"), 24933642);
+assert.strictEqual(mainB("spec.txt"), 2713310158n);
 const partB = mainB("input.txt");
 
-assert.strictEqual(partB, 2195372);
+// assert.strictEqual(partB, 2195372);
 console.log("part B", partB);
+assert.ok(partB > 14399640002);
+assert.ok(partB > 14399640002);

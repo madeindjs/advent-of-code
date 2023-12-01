@@ -1,13 +1,13 @@
 Monkey 0:
   Starting items: 79, 98
-  Operation: new = old * 19
+  Operation: new = old * 19n
   Test: divisible by 23
     If true: throw to monkey 2
     If false: throw to monkey 3
 
 Monkey 1:
   Starting items: 54, 65, 75, 74
-  Operation: new = old + 6
+  Operation: new = old + 6n
   Test: divisible by 19
     If true: throw to monkey 2
     If false: throw to monkey 0
@@ -21,7 +21,7 @@ Monkey 2:
 
 Monkey 3:
   Starting items: 74
-  Operation: new = old + 3
+  Operation: new = old + 3n
   Test: divisible by 17
     If true: throw to monkey 0
     If false: throw to monkey 1
