@@ -23,12 +23,18 @@ function getNeighbors(lines, [x, y], blacklist = []) {
  * @param {string[]} lines
  * @param {number[]} param1
  * @param {string} str
+ * @returns {number[][]}
  */
-function getNeighborsString(lines, [x, y], str) {
-  return str
-    .split("")
-    .map((_, i) => [x, y + i])
-    .flatMap(([xN, yN], _, points) => getNeighbors(lines, [xN, yN], points));
+function getNumberNeighbors(lines, [x, y], str) {
+  return getNumberPoints([x, y], str).flatMap(([xN, yN], _, points) => getNeighbors(lines, [xN, yN], points));
+}
+
+function getNumberPoints([x, y], str) {
+  return str.split("").map((_, i) => [x, y + i]);
+}
+
+function isSamePoint(a, b) {
+  return a[0] === b[0] && a[1] === b[1];
 }
 
 /**
@@ -43,16 +49,45 @@ function* getNumbersInGrid(lines) {
   }
 }
 
-const isCharNumber = (char) => !Number.isNaN(Number(char));
-const isCharSymbol = (char) => !isCharNumber(char) && char !== ".";
-
 function mainA(file) {
+  const isCharNumber = (char) => !Number.isNaN(Number(char));
+  const isCharSymbol = (char) => !isCharNumber(char) && char !== ".";
+
   let total = 0;
   const lines = readFileSync(file, { encoding: "utf-8" }).split("\n");
 
   for (const { number, pos } of getNumbersInGrid(lines)) {
-    const touchSymbol = getNeighborsString(lines, pos, number).some(([xN, yN]) => isCharSymbol(lines[xN][yN]));
+    const touchSymbol = getNumberNeighbors(lines, pos, number).some(([xN, yN]) => isCharSymbol(lines[xN][yN]));
     if (touchSymbol) total += Number(number);
+  }
+
+  return total;
+}
+
+/**
+ * @param {string[]} lines
+ */
+function* getStarPoints(lines) {
+  for (let x = 0; x < lines.length; x++) {
+    const line = lines[x];
+    for (let y = 0; y < line.length; y++) {
+      if (line[y] === "*") yield [x, y];
+    }
+  }
+}
+
+function mainB(file) {
+  let total = 0;
+  const lines = readFileSync(file, { encoding: "utf-8" }).split("\n");
+
+  const numbers = Array.from(getNumbersInGrid(lines)).map((number) => ({
+    ...number,
+    neighbors: getNumberNeighbors(lines, number.pos, number.number),
+  }));
+
+  for (const starPoint of getStarPoints(lines)) {
+    const numbersTouch = numbers.filter((number) => number.neighbors.some((n) => isSamePoint(starPoint, n)));
+    if (numbersTouch.length === 2) total += Number(numbersTouch[0].number) * Number(numbersTouch[1].number);
   }
 
   return total;
@@ -60,3 +95,6 @@ function mainA(file) {
 
 assert.strictEqual(mainA("./spec.txt"), 4361);
 console.log("A", mainA("./input.txt"));
+
+assert.strictEqual(mainB("./spec.txt"), 467835);
+console.log("B", mainB("./input.txt"));
