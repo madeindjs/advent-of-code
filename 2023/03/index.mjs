@@ -16,20 +16,23 @@ function getNeighbors(lines, [x, y], blacklist = []) {
     [x + 0, y + 1],
     [x - 1, y + 1],
     [x - 1, y + 0],
-  ].filter(([x, y]) => lines[x]?.[y] !== undefined || blacklist.some(([xB, yB]) => xB === x && yB === y));
+  ].filter(([x, y]) => lines[x]?.[y] !== undefined || blacklist.some((b) => isSamePoint(b, [x, y])));
 }
 
 /**
  * @param {string[]} lines
- * @param {number[]} param1
+ * @param {number[]} point
  * @param {string} str
  * @returns {number[][]}
  */
-function getNumberNeighbors(lines, [x, y], str) {
-  return getNumberPoints([x, y], str).flatMap(([xN, yN], _, points) => getNeighbors(lines, [xN, yN], points));
+function getTextNeighbors(lines, point, str) {
+  return getTextPoints(point, str).flatMap((p, _, points) => getNeighbors(lines, p, points));
 }
 
-function getNumberPoints([x, y], str) {
+/**
+ * @param {number[]} param0
+ */
+function getTextPoints([x, y], str) {
   return str.split("").map((_, i) => [x, y + i]);
 }
 
@@ -57,7 +60,7 @@ function mainA(file) {
   const lines = readFileSync(file, { encoding: "utf-8" }).split("\n");
 
   for (const { number, pos } of getNumbersInGrid(lines)) {
-    const touchSymbol = getNumberNeighbors(lines, pos, number).some(([xN, yN]) => isCharSymbol(lines[xN][yN]));
+    const touchSymbol = getTextNeighbors(lines, pos, number).some(([xN, yN]) => isCharSymbol(lines[xN][yN]));
     if (touchSymbol) total += Number(number);
   }
 
@@ -82,7 +85,7 @@ function mainB(file) {
 
   const numbers = Array.from(getNumbersInGrid(lines)).map((number) => ({
     ...number,
-    neighbors: getNumberNeighbors(lines, number.pos, number.number),
+    neighbors: getTextNeighbors(lines, number.pos, number.number),
   }));
 
   for (const starPoint of getStarPoints(lines)) {
