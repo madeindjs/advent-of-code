@@ -46,22 +46,21 @@ const mainA = (file) => computeEachLine(file, mainACompute);
 function mainB(file) {
   let cards = readFileSync(file, { encoding: "utf-8" }).split("\n").filter(Boolean).map(parseCard);
 
-  const addCardId = (id) => {
-    const card = cards.find((c) => c.id === id);
-    if (card === undefined) throw Error(`cannot find card ${id}`);
-    cards.push(card);
-  };
+  const counts = cards.reduce((acc, card) => {
+    acc[card.id] ??= 1;
+    const qty = acc[card.id];
+    computeCardMatches(card).forEach((_, j) => {
+      const id = card.id + j + 1;
+      acc[id] ??= 1;
+      acc[id] += qty;
+    });
 
-  const maxId = cards.length;
+    return acc;
+  }, {});
 
-  for (let id = 1; id <= maxId; id++) {
-    const currentCards = cards.filter((c) => c.id === id);
-    const card = currentCards[0];
-    if (card === undefined) throw Error(`cannot find card ${id}`);
-    for (const _ of currentCards) computeCardMatches(card).forEach((_, j) => addCardId(card.id + j + 1));
-  }
+  const sum = (numbers) => numbers.reduce((acc, v) => acc + v, 0);
 
-  return cards;
+  return sum(Object.values(counts));
 }
 
 const testA = await mainA("./spec.txt");
@@ -72,12 +71,8 @@ assert.strictEqual(resultA, 32001);
 console.log("result A", resultA);
 
 const testB = mainB("spec.txt");
-assert.strictEqual(testB.filter((c) => c.id === 2).length, 2);
-assert.strictEqual(testB.filter((c) => c.id === 3).length, 4);
-assert.strictEqual(testB.filter((c) => c.id === 4).length, 8);
-assert.strictEqual(testB.filter((c) => c.id === 5).length, 14);
-assert.strictEqual(testB.filter((c) => c.id === 6).length, 1);
-assert.strictEqual(testB.length, 30);
+assert.strictEqual(testB, 30);
 
 const resultB = await mainB("input.txt");
-console.log("result B", resultB.length);
+assert.strictEqual(resultB, 5037841);
+console.log("result B", resultB);
