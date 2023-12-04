@@ -1,4 +1,4 @@
-import { createReadStream, readFileSync } from "fs";
+import { createReadStream } from "fs";
 import assert from "node:assert";
 import readline from "readline";
 
@@ -43,20 +43,20 @@ assert.strictEqual(mainACompute("Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 5
 
 const mainA = (file) => computeEachLine(file, mainACompute);
 
-function mainB(file) {
-  let cards = readFileSync(file, { encoding: "utf-8" }).split("\n").filter(Boolean).map(parseCard);
+async function mainB(file) {
+  /** @type {Record<number, number>} */
+  const counts = {};
 
-  const counts = cards.reduce((acc, card) => {
-    acc[card.id] ??= 1;
-    const qty = acc[card.id];
+  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+    const card = parseCard(line);
+    counts[card.id] ??= 1;
+    const qty = counts[card.id];
     computeCardMatches(card).forEach((_, j) => {
       const id = card.id + j + 1;
-      acc[id] ??= 1;
-      acc[id] += qty;
+      counts[id] ??= 1;
+      counts[id] += qty;
     });
-
-    return acc;
-  }, {});
+  }
 
   const sum = (numbers) => numbers.reduce((acc, v) => acc + v, 0);
 
@@ -70,7 +70,7 @@ const resultA = await mainA("input.txt");
 assert.strictEqual(resultA, 32001);
 console.log("result A", resultA);
 
-const testB = mainB("spec.txt");
+const testB = await mainB("spec.txt");
 assert.strictEqual(testB, 30);
 
 const resultB = await mainB("input.txt");
