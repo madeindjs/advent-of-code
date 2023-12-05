@@ -6,7 +6,6 @@ function extractNubersFromStr(str) {
 }
 
 /**
- *
  * @param {number} nb
  * @param {number} start
  * @param {number} range
@@ -22,7 +21,6 @@ function applyTransform(nb, from, to, range) {
   return nb + offset;
 }
 /**
- *
  * @param {number} nb
  * @param {number[][]} trans
  * @returns
@@ -46,25 +44,57 @@ function parseInstruction(lineGroup) {
 
 function mainA(file) {
   const linesGroups = readFileSync(file, { encoding: "utf-8" }).split("\n\n");
-  // let seeds = extractNubersFromStr(linesGroups.shift());
 
   const map = { seed: extractNubersFromStr(linesGroups.shift()) };
-  console.log(map);
 
   for (const lineGroup of linesGroups) {
     const { from, to, trans } = parseInstruction(lineGroup);
 
     map[to] = (map[from] ?? []).map((s) => applyTransforms(s, trans));
     map[from] = [];
-
-    // seeds = seeds.map((s) => applyTransforms(s, parseInstruction(lineGroup).trans));
-    // for (const [from, to, range] of parseInstruction(lineGroup).trans) {
-    //   seeds = seeds.map((s) => applyTransform(s, from, to, range));
-    // }
-    console.log(map);
   }
   return Math.min(...Object.values(map).flatMap((m) => m));
 }
 
-assert.strictEqual(mainA("./spec.txt"), 35);
-console.log(mainA("./input.txt"));
+/**
+ * @param {number[]} numbers
+ * @returns {Generator<number, void, unknown>}
+ */
+function* createRanges(numbers) {
+  for (let i = 0; i < numbers.length; i += 2) {
+    const from = numbers[i];
+    const to = numbers[i + 1] + numbers[i] - 1;
+
+    for (let i = from; i <= to; i++) {
+      yield i;
+    }
+  }
+}
+assert.deepEqual(Array.from(createRanges([0, 2, 6, 2])), [0, 1, 6, 7]);
+
+function mainB(file) {
+  const linesGroups = readFileSync(file, { encoding: "utf-8" }).split("\n\n");
+  const seedsGenerator = createRanges(extractNubersFromStr(linesGroups.shift()));
+  const instructions = linesGroups.map(parseInstruction);
+
+  let min = Infinity;
+
+  for (const start of seedsGenerator) {
+    let type = "seed";
+    let qty = start;
+
+    for (const { from, to, trans } of instructions) {
+      if (from !== type) continue;
+
+      type = to;
+      qty = applyTransforms(qty, trans);
+
+      if (qty < min && type === "location") min = qty;
+    }
+  }
+
+  return min;
+}
+
+assert.strictEqual(mainB("./spec.txt"), 46);
+console.log(mainB("./input.txt"));
