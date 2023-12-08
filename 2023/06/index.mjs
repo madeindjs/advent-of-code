@@ -43,20 +43,29 @@ function* getBetterSolutions(timeToBeat, distance, from = 1) {
 }
 assert.deepEqual(Array.from(getBetterSolutions(7, 9)), [2, 3, 4, 5]);
 
+function countIterable(generator) {
+  let i = 0;
+  for (const _ of generator) {
+    i++;
+  }
+  return i;
+}
+
 function mainA(file) {
   let total = 1;
   for (const [timeToBeat, distance] of parse(file)) {
-    const betterSolutions = Array.from(getBetterSolutions(timeToBeat, distance)).length;
+    const betterSolutions = countIterable(getBetterSolutions(timeToBeat, distance));
     total *= betterSolutions;
   }
   return total;
 }
+
 assert.strictEqual(mainA("./spec.txt"), 288);
 console.log(mainA("./input.txt"));
 
 function mainB(file) {
   const [timeToBeat, distance] = parse2(file);
-  return Array.from(getBetterSolutions(timeToBeat, distance)).length;
+  return countIterable(getBetterSolutions(timeToBeat, distance));
 }
 assert.strictEqual(mainB("./spec.txt"), 71503);
 console.log(mainB("./input.txt"));
