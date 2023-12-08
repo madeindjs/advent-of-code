@@ -45,13 +45,13 @@ function mainB(network) {
 
   let i = 0;
 
-  let current = new Set(Array.from(network.nodes.keys()).filter(isPointA));
+  let current = new Set(Array.from(network.nodes.keys()).filter(isPointZ));
 
   console.log(current);
 
   const isFinished = () => {
     for (const p of current) {
-      if (!isPointZ(p)) return false;
+      if (!isPointA(p)) return false;
     }
     return true;
   };
@@ -64,7 +64,7 @@ function mainB(network) {
     for (const point of current) {
       const node = network.nodes.get(point);
       if (!node) throw Error(`Could not find node ${current}`);
-      newCurrent.add(node[direction]);
+      newCurrent.add(node[direction ? 1 : 0]);
     }
 
     current = newCurrent;
