@@ -19,12 +19,14 @@ function parseFile(file) {
 
 /**
  * @param {Network} network
+ * @param {string} from
+ * @param {(node: string) => boolean} goal
  */
-function mainA(network) {
+function computePathLength(network, from, goal) {
   let i = 0;
-  let current = "AAA";
+  let current = from;
 
-  while (current !== "ZZZ") {
+  while (!goal(current)) {
     const direction = network.instructions.at(i % network.instructions.length);
     if (direction === undefined) throw Error();
     const node = network.nodes.get(current);
@@ -36,44 +38,21 @@ function mainA(network) {
   return i;
 }
 
-/**
- * @param {Network} network
- */
+/** @param {Network} network */
+const mainA = (network) => computePathLength(network, "AAA", (n) => n === "ZZZ");
+
+/**  @param {Network} network */
 function mainB(network) {
-  const isPointA = (p) => p.endsWith("A");
-  const isPointZ = (p) => p.endsWith("Z");
+  let nodesA = new Set(Array.from(network.nodes.keys()).filter((p) => p.endsWith("A")));
 
-  let i = 0;
-
-  let current = new Set(Array.from(network.nodes.keys()).filter(isPointZ));
-
-  console.log(current);
-
-  const isFinished = () => {
-    for (const p of current) {
-      if (!isPointA(p)) return false;
-    }
-    return true;
-  };
-
-  while (!isFinished()) {
-    const direction = network.instructions.at(i % network.instructions.length);
-    if (direction === undefined) throw Error;
-    let newCurrent = new Set();
-
-    for (const point of current) {
-      const node = network.nodes.get(point);
-      if (!node) throw Error(`Could not find node ${current}`);
-      newCurrent.add(node[direction ? 1 : 0]);
-    }
-
-    current = newCurrent;
-    i++;
+  const res = [];
+  for (const node of nodesA) {
+    res.push(computePathLength(network, node, (p) => p.endsWith("Z")));
   }
 
-  console.log(current);
-
-  return i;
+  const gcd = (a, b) => (a ? gcd(b % a, a) : b);
+  const lcm = (a, b) => (a * b) / gcd(a, b);
+  return res.reduce(lcm);
 }
 
 {
@@ -93,5 +72,5 @@ function mainB(network) {
   const input = parseFile("input.txt");
   const partB = mainB(input);
   console.log("part B", partB);
-  // assert.strictEqual(partB, 20659);
+  assert.strictEqual(partB, 15690466351717);
 }
