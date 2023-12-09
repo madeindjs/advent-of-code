@@ -7,15 +7,18 @@ const parseFile = (file) =>
     .map((line) => line.split(" ").map(Number));
 
 /**
- * @param {number[]} line
- * @returns {number[][]}
+ * @template T
+ * @param {Array<T>} arr
+ * @returns T
  */
+const last = (arr) => arr[arr.length - 1];
+
+/** @param {number[]} line */
 function buildGraph(line) {
   const graph = [line];
-  const isComplete = () => graph[graph.length - 1].every((a) => a === 0);
 
-  while (!isComplete()) {
-    const lastLine = graph[graph.length - 1];
+  while (!last(graph).every((a) => a === 0)) {
+    const lastLine = last(graph);
     const newLine = [];
     for (let i = 0; i < lastLine.length - 1; i++) {
       newLine.push(lastLine[i + 1] - lastLine[i]);
@@ -30,19 +33,10 @@ assert.deepEqual(buildGraph([0, 3, 6, 9, 12, 15]), [
   [0, 0, 0, 0],
 ]);
 
-/**
- * @template T
- * @param {Array<T>} arr
- * @returns T
- */
-const last = (arr) => arr[arr.length - 1];
-
-/**
- * @param {number[]} line
- */
+/** @param {number[]} line */
 function computeLineRight(line) {
   const graph = buildGraph(line);
-  graph[graph.length - 1].push(0);
+  last(graph).push(0);
 
   for (let i = graph.length - 2; i >= 0; i--) {
     const previousLine = graph[i + 1];
@@ -56,12 +50,10 @@ function computeLineRight(line) {
 assert.strictEqual(computeLineRight([0, 3, 6, 9, 12, 15]), 18);
 assert.strictEqual(computeLineRight([1, 3, 6, 10, 15, 21]), 28);
 
-/**
- * @param {number[]} line
- */
+/** @param {number[]} line */
 function computeLineLeft(line) {
   const graph = buildGraph(line);
-  graph[graph.length - 1].unshift(0);
+  last(graph).unshift(0);
 
   for (let i = graph.length - 2; i >= 0; i--) {
     const previousLine = graph[i + 1];
