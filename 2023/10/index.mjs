@@ -2,10 +2,10 @@ import { readFileSync } from "node:fs";
 
 /**
  * @typedef {{x:number, y:number}} Point
+ * @typedef {Point & {i:number}} PointWithIndex
  */
 
 /**
- *
  * @param {Point} a
  * @param {Point} b
  */
@@ -41,6 +41,18 @@ class Grid {
       }
     }
     throw Error("Cound not find S");
+  }
+
+  /**
+   *
+   * @param {Point} from
+   * @param {Point} to
+   * @returns {Point | undefined}
+   */
+  findNextPoint(from, to) {
+    for (const neighbor of this.getNeighbors(to, [from])) {
+      return neighbor;
+    }
   }
 
   /**
@@ -81,21 +93,61 @@ class Grid {
   }
 
   /**
-   * @param {Point} point
-   * @param {Point[]} visited
+   * @param {Point} from
+   * @param {Point} to
+   * @returns {Generator<Point, undefined, unknown>}
    */
-  *computePaths(point = this.findStartingPoint(), visited = [point]) {
-    let hasNeighbor = false;
-    for (const neighbor of this.getNeighbors(point, visited)) {
-      let hasNeighbor = true;
-      if (visited.some((v) => isSamePoint(v, neighbor))) {
-        yield visited;
-      } else {
-        console.log(neighbor);
-        yield* this.computePaths(neighbor, [...visited, neighbor]);
-      }
+  *computePath(from, to) {
+    const path = [from, to];
+    let i = 0;
+
+    while (true) {
+      const next = this.findNextPoint(from, to);
+      if (next === undefined) return;
+      if (path.some((p) => isSamePoint(p, next))) return;
+      yield next;
+      from = to;
+      to = next;
+      i++;
     }
-    if (!hasNeighbor) yield visited;
+  }
+
+  computePaths2() {
+    // let hasNeighbor = false;
+    const start = this.findStartingPoint();
+
+    /** @type {Point[]} */
+    let visited = [start];
+
+    let [point1, point2] = Array.from(this.getNeighbors(start));
+    let [gen1, gen2] = [point1, point2].map((p) => this.computePath(start, p));
+
+    let i = 1;
+
+    while (true) {
+      point1 = gen1?.next()?.value;
+      if (point1 && !visited.some((v) => isSamePoint(v, point1))) {
+        visited.push(point1);
+      } else {
+        gen1 = undefined;
+      }
+
+      point2 = gen2?.next()?.value;
+      if (point2 && !visited.some((v) => isSamePoint(v, point2))) {
+        visited.push(point2);
+      } else {
+        gen2 = undefined;
+      }
+
+      if (!gen1 && !gen2) return i;
+
+      i++;
+    }
+
+    // for (const point of points) {
+    // }
+
+    // console.log(points.map);
   }
 
   /**
@@ -134,6 +186,6 @@ class Grid {
 
 const spec = new Grid("input.txt");
 // console.log(Math.max(...Array.from(spec.computePaths()).map((p) => p.length)));
-// console.log(Array.from(spec.computePaths()));
-// console.log(Array.from(spec.computePaths()).map((ps) => spec.printPath(ps)));
-console.log(spec.findfurthest(Array.from(spec.computePaths())));
+// console.log(spec.computePaths2());
+console.log(spec.computePaths2());
+// console.log(spec.findfurthest(Array.from(spec.computePaths())));
