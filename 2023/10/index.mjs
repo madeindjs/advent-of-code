@@ -44,7 +44,6 @@ class Grid {
   }
 
   /**
-   *
    * @param {Point} from
    * @param {Point} to
    * @returns {Point | undefined}
@@ -112,42 +111,27 @@ class Grid {
     }
   }
 
-  computePaths2() {
-    // let hasNeighbor = false;
+  computePaths() {
     const start = this.findStartingPoint();
-
     /** @type {Point[]} */
     let visited = [start];
-
-    let [point1, point2] = Array.from(this.getNeighbors(start));
-    let [gen1, gen2] = [point1, point2].map((p) => this.computePath(start, p));
-
+    const pointsG = Array.from(this.getNeighbors(start)).map((p) => ({ gen: this.computePath(start, p), point: p }));
     let i = 1;
 
     while (true) {
-      point1 = gen1?.next()?.value;
-      if (point1 && !visited.some((v) => isSamePoint(v, point1))) {
-        visited.push(point1);
-      } else {
-        gen1 = undefined;
+      for (const g of pointsG) {
+        g.point = g.gen?.next()?.value;
+
+        if (g.point && !visited.some((v) => isSamePoint(v, g.point))) {
+          visited.push(g.point);
+        } else {
+          g.gen = undefined;
+        }
       }
 
-      point2 = gen2?.next()?.value;
-      if (point2 && !visited.some((v) => isSamePoint(v, point2))) {
-        visited.push(point2);
-      } else {
-        gen2 = undefined;
-      }
-
-      if (!gen1 && !gen2) return i;
-
+      if (pointsG.every((g) => !g.gen)) return i;
       i++;
     }
-
-    // for (const point of points) {
-    // }
-
-    // console.log(points.map);
   }
 
   /**
@@ -158,34 +142,8 @@ class Grid {
     points.forEach(({ x, y }, i) => (map[x][y] = String(i)));
     console.log(map);
   }
-
-  /**
-   * @param {Point[][]} paths
-   */
-  findfurthest(paths) {
-    // /** @type {Array<Point & {index: number}>[]} */
-    let pathsWithIndex = paths.flatMap((path) => path.map((p, i) => ({ ...p, i })));
-
-    let furthest = -Infinity;
-
-    while (pathsWithIndex.length > 0) {
-      const point = pathsWithIndex.pop();
-      const samePoints = pathsWithIndex.filter((p) => isSamePoint(point, p));
-      pathsWithIndex = pathsWithIndex.filter((p) => !isSamePoint(point, p));
-
-      furthest = Math.max(furthest, Math.min(...samePoints.map((p) => p.i)));
-    }
-
-    return furthest;
-
-    // const maxLength = Math.max(...paths.map((p) => p.length));
-
-    // for (let index = 0; index < maxLength; index++) {}
-  }
 }
 
 const spec = new Grid("input.txt");
-// console.log(Math.max(...Array.from(spec.computePaths()).map((p) => p.length)));
-// console.log(spec.computePaths2());
-console.log(spec.computePaths2());
-// console.log(spec.findfurthest(Array.from(spec.computePaths())));
+
+console.log(spec.computePaths());
