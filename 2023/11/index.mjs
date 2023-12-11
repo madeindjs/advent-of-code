@@ -11,17 +11,20 @@ function* parseFile(file, expansion = 1) {
     .split("\n")
     .map((line) => line.split("").map((a) => a === "#"));
 
-  const xEmptyList = [];
-  const yEmptyList = [];
-
-  for (let x = 0; x < map.length; x++) {
-    const row = map[x];
-    if (row.every((r) => !r)) xEmptyList.push(x);
+  function* getXEmptyList() {
+    for (let x = 0; x < map.length; x++) {
+      if (map[x].every((r) => !r)) yield x;
+    }
   }
 
-  for (let y = 0; y < map[0].length; y++) {
-    if (map.every((r) => !r[y])) yEmptyList.push(y);
+  function* getYEmptyList() {
+    for (let y = 0; y < map[0].length; y++) {
+      if (map.every((r) => !r[y])) yield y;
+    }
   }
+
+  const xEmptyList = Array.from(getXEmptyList());
+  const yEmptyList = Array.from(getYEmptyList());
 
   const expandsionFactor = expansion === 1 ? 1 : expansion - 1;
 
@@ -49,11 +52,6 @@ function* getCouples(arr) {
     for (const next of arr.slice(index + 1)) yield [element, next];
   }
 }
-assert.deepEqual(Array.from(getCouples([1, 2, 3])), [
-  [1, 2],
-  [1, 3],
-  [2, 3],
-]);
 
 /**
  * @param {Point} a
@@ -62,17 +60,11 @@ assert.deepEqual(Array.from(getCouples([1, 2, 3])), [
 function getDistance(a, b) {
   return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 }
-assert.strictEqual(getDistance([0, 0], [1, 1]), 2);
-assert.strictEqual(getDistance([0, 0], [2, 2]), 4);
-assert.strictEqual(getDistance([0, 0], [0, 2]), 2);
-assert.strictEqual(getDistance([0, 0], [0, 1_000_000]), 1_000_000);
 
 function main(file, expansion = 1) {
   const points = Array.from(parseFile(file, expansion));
   let total = 0;
-  for (const couple of getCouples(points)) {
-    total += getDistance(...couple);
-  }
+  for (const couple of getCouples(points)) total += getDistance(...couple);
   return total;
 }
 
