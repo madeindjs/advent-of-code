@@ -21,6 +21,8 @@ class Grid {
     this.map = readFileSync(file, { encoding: "utf-8" })
       .split("\n")
       .map((line) => line.split(""));
+
+    this.visitedMap = new Array(this.map.length).fill(undefined).map(() => new Array(this.map[0].length).fill(" "));
   }
 
   /**
@@ -124,6 +126,7 @@ class Grid {
 
         if (g.point && !visited.some((v) => isSamePoint(v, g.point))) {
           visited.push(g.point);
+          this.visitedMap[g.point.x][g.point.y] = "|";
         } else {
           g.gen = undefined;
         }
@@ -137,7 +140,7 @@ class Grid {
   /**
    * @param {Point[]} points
    */
-  printPath(points) {
+  print(points) {
     const map = new Array(this.map.length).fill(undefined).map(() => new Array(this.map[0].length).fill(" "));
     points.forEach(({ x, y }, i) => (map[x][y] = String(i)));
     console.log(map);
@@ -145,5 +148,57 @@ class Grid {
 }
 
 const spec = new Grid("input.txt");
-
 console.log(spec.computePaths());
+
+/**
+ * @param {string[][]} visitedMap
+ */
+function part2(visitedMap) {
+  /**
+   * @param {Point} param0
+   * @returns {Point[]}
+   */
+  function getNeighbors({ x, y }) {
+    return [
+      { x: x - 1, y: y - 1 },
+      { x: x + 0, y: y - 1 },
+      { x: x + 1, y: y - 1 },
+      { x: x + 1, y: y },
+      { x: x + 1, y: y + 1 },
+      { x: x + 0, y: y + 1 },
+      { x: x - 1, y: y + 1 },
+      { x: x - 1, y: y + 0 },
+    ].filter(({ x, y }) => visitedMap[x]?.[y] === " ");
+  }
+
+  function* getFrameWork() {
+    for (let x = 0; x < visitedMap.length; x++) {
+      yield { x, y: 0 };
+      yield { x, y: visitedMap[x].length - 1 };
+    }
+  }
+
+  let stack = Array.from(getFrameWork());
+
+  while (stack.length > 0) {
+    const p = stack.pop();
+    if (p === undefined) throw Error();
+    visitedMap[p.x][p.y] = "$";
+    stack.push(...getNeighbors(p));
+  }
+
+  return visitedMap;
+}
+
+console.log(
+  part2(spec.visitedMap)
+    .map((r) => r.join(""))
+    .join("\n")
+);
+
+// too high 556
+console.log(
+  part2(spec.visitedMap)
+    .flatMap((r) => r)
+    .filter((c) => c === " ").length
+);
