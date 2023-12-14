@@ -10,7 +10,7 @@ function* getGridsFromFile(file) {
     yield grid
       .split("\n")
       .filter(Boolean)
-      .map((row) => row.split(""));
+      .map((r) => r.split(""));
   }
 }
 
@@ -21,7 +21,6 @@ function* getGridsFromFile(file) {
  */
 function* getMirrors(grid, a, b) {
   let i = 0;
-
   while (true) {
     const col1 = a - i;
     const col2 = b + i;
@@ -31,9 +30,7 @@ function* getMirrors(grid, a, b) {
   }
 }
 
-/**
- * @param {Readonly<Grid>} grid
- */
+/** @param {Readonly<Grid>} grid */
 function getHoriontalSplit(grid) {
   for (let x = 0; x < grid.length - 1; x++) {
     if (Array.from(getMirrors(grid, x, x + 1)).every(([a, b]) => grid[a].join("") === grid[b].join("")))
@@ -42,12 +39,6 @@ function getHoriontalSplit(grid) {
 }
 
 /** @param {Grid} grid */
-const getVerticalSplit = (grid) => getHoriontalSplit(flipGrid(grid));
-
-/**
- * @param {Grid} grid
- * @returns {Grid}
- */
 function flipGrid(grid) {
   /** @type {Grid} */
   const newGrid = [];
@@ -61,32 +52,28 @@ function flipGrid(grid) {
   return newGrid;
 }
 
-function mainA(file) {
-  let totalTop = 0;
-  let totalLeft = 0;
+function main(file, getSplitFn) {
+  let total = 0;
 
   for (const grid of getGridsFromFile(file)) {
-    const horizontalSplit = getHoriontalSplit(grid);
-    const verticalSplit = getVerticalSplit(grid);
+    const horizontalSplit = getSplitFn(grid);
+    const verticalSplit = getSplitFn(flipGrid(grid));
 
     if (horizontalSplit) {
-      totalTop += horizontalSplit[0] + 1;
+      total += (horizontalSplit[0] + 1) * 100;
     } else if (verticalSplit) {
-      totalLeft += verticalSplit[0] + 1;
+      total += verticalSplit[0] + 1;
     } else {
       throw Error(`Didnt find a mirror\n${grid.map((row) => row.join("")).join("\n")}`);
     }
   }
 
-  return totalTop * 100 + totalLeft;
+  return total;
 }
 
-//------------------------------------------------------------------------------
+const mainA = (file) => main(file, getHoriontalSplit);
 
-/**
- *
- * @param {Grid} grid
- */
+/** @param {Grid} grid */
 function getAlmostHoriontalSplit(grid) {
   for (let x = 0; x < grid.length - 1; x++) {
     let diff = 0;
@@ -95,34 +82,13 @@ function getAlmostHoriontalSplit(grid) {
   }
 }
 
-/** @param {Grid} grid */
-const getAlmostVerticalSplit = (grid) => getAlmostHoriontalSplit(flipGrid(grid));
-
 /**
  * @param {string[]} arrA
  * @param {string[]} arrB
  */
 const diffCount = (arrA, arrB) => arrA.filter((a, i) => arrB[i] !== a).length;
 
-function mainB(file) {
-  let totalTop = 0;
-  let totalLeft = 0;
-
-  for (const grid of getGridsFromFile(file)) {
-    const horizontalSplit = getAlmostHoriontalSplit(grid);
-    const verticalSplit = getAlmostVerticalSplit(grid);
-
-    if (horizontalSplit) {
-      totalTop += horizontalSplit[0] + 1;
-    } else if (verticalSplit) {
-      totalLeft += verticalSplit[0] + 1;
-    } else {
-      throw Error(`Didnt find a mirror\n${grid.map((row) => row.join("")).join("\n")}`);
-    }
-  }
-
-  return totalTop * 100 + totalLeft;
-}
+const mainB = (file) => main(file, getAlmostHoriontalSplit);
 
 assert.strictEqual(mainA("spec.txt"), 405);
 assert.strictEqual(mainA("input.txt"), 28895);
