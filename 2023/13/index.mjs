@@ -16,6 +16,14 @@ function parseGrid(grid) {
     .map((row) => row.split(""));
 }
 
+/**
+ * @param {string[]} arrA
+ * @param {string[]} arrB
+ */
+function diffCount(arrA, arrB) {
+  return arrA.filter((a, i) => arrB[i] !== a).length;
+}
+
 function* getGridsFromFile(file) {
   for (const grid of readFileSync(file, { encoding: "utf-8" }).split("\n\n")) {
     yield parseGrid(grid);
@@ -49,69 +57,9 @@ assert.deepEqual(Array.from(getMirrors([true, true, true, true], 1, 2)), [
 function getHoriontalSplit(grid) {
   for (let x = 0; x < grid.length - 1; x++) {
     const ok = Array.from(getMirrors(grid, x, x + 1)).every(([a, b]) => grid[a].join("") === grid[b].join(""));
-
-    // const ok = Array.from(getMirrors(grid, x, x + 1)).every(([a, b]) =>
-    //   grid[a].every((_, index) => grid[a][index] === grid[b][index])
-    // );
-
     if (ok) return [x, x + 1];
   }
 }
-
-// assert.deepEqual(
-//   getHoriontalSplit(
-//     parseGrid(`#...#..######.#.#
-// ...#.###.##..#.#.
-// ###....#..#..#.#.
-// .##.######.###.#.
-// ##..#..#..###....
-// ##..#..#..###....
-// .##.##########.#.
-// ###....#..#..#.#.
-// ...#.###.##..#.#.
-// #...#..######.#.#
-// .##.#.#..#....##.
-// .##.#.#..#....##.
-// #...#..######.#.#`)
-//   ),
-//   [10, 11]
-// );
-
-// assert.deepEqual(
-//   getHoriontalSplit(
-//     parseGrid(`#...#..######.#.#
-// ...#.###.##..#.#.
-// ###....#..#..#.#.
-// .##.######.###.#.
-// ##..#..#..###....
-// ##..#..#..###....
-// .##.##########.#.
-// ###....#..#..#.#.
-// ...#.###.##..#.#.
-// #...#..######.#.#
-// .##.#.#..#....##.
-// .##.#.#..#....##.
-// #...#..######.#.#`)
-//   ),
-//   [10, 11]
-// );
-
-// assert.deepEqual(
-//   getVerticalSplit(
-//     parseGrid(
-//       `..#.#......#.
-// ###.#.####.#.
-// ##.##.#..#.##
-// ##..#.####.#.
-// ...###.##.###
-// ###.##.##.##.
-// ###..##..#...
-// ###..##..##..
-// ####.#.##.#.#`
-//     )
-//   ),
-//   [0, 1]
-// );
 
 /**
  * @param {Grid} grid
@@ -139,8 +87,6 @@ function flipGrid(grid) {
 }
 
 function mainA(file) {
-  let total = 0;
-
   let totalTop = 0;
   let totalLeft = 0;
 
@@ -148,15 +94,9 @@ function mainA(file) {
     const horizontalSplit = getHoriontalSplit(grid);
     const verticalSplit = getVerticalSplit(grid);
 
-    console.log(horizontalSplit, verticalSplit);
-
     if (horizontalSplit) {
-      // console.log("h", horizontalSplit);
       totalTop += horizontalSplit[0] + 1;
-      // total += (horizontalSplit[0] + 1) * 100;
     } else if (verticalSplit) {
-      // console.log("v", verticalSplit);
-      // total += (verticalSplit[0] + 1) * 1;
       totalLeft += verticalSplit[0] + 1;
     } else {
       printGrid(grid);
@@ -164,7 +104,6 @@ function mainA(file) {
   }
 
   return totalTop * 100 + totalLeft;
-  return total;
 }
 
 /**
@@ -175,6 +114,6 @@ function printGrid(grid) {
 }
 
 assert.strictEqual(mainA("spec.txt"), 405);
-console.log(mainA("input.txt"));
+assert.strictEqual(mainA("input.txt"), 28895);
 // too low 26885
 // not 27795
