@@ -6,9 +6,6 @@ import { readFileSync } from "node:fs";
  * @typedef {[number, number]} Point
  * @typedef {'N' | 'S' | 'E' | 'W'} Direction
  * @typedef {{point: Point, direction: Direction}} Beam
- */
-
-/**
  * @returns {Grid}
  */
 function parseFile(file) {
@@ -30,14 +27,6 @@ function getNextPoint([x, y], direction) {
   throw Error(`Unknown direction: ${direction}`);
 }
 
-/**
- * @param {Grid} grid
- * @param {Point} param1
- */
-function isPointInsideTheGrid(grid, [x, y]) {
-  return x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
-}
-
 const BEAM_DIRECTION_MAPPING = {
   "/": { N: ["E"], S: ["W"], E: ["N"], W: ["S"] },
   "\\": { N: ["W"], S: ["E"], W: ["N"], E: ["S"] },
@@ -47,16 +36,14 @@ const BEAM_DIRECTION_MAPPING = {
 };
 
 /** @param {Beam} beam */
-function serializeBeam(beam) {
-  return `${beam.point.toString()},${beam.direction}`;
-}
+const serializeBeam = (beam) => `${beam.point.toString()},${beam.direction}`;
 
 /**
  * @param {Grid} grid
  * @param {Beam} start
  * @returns {Generator<Point, void, unknown>}
  */
-function* getTraversedPoints(grid, start = { point: [0, -1], direction: "E" }) {
+function* getTraversedPoints(grid, start) {
   /** @type {Beam[]} */
   let beams = [start];
   const existinsBeams = new Set(serializeBeam(start));
@@ -72,13 +59,14 @@ function* getTraversedPoints(grid, start = { point: [0, -1], direction: "E" }) {
     };
 
     for (const beam of beams) {
-      const point = getNextPoint(beam.point, beam.direction);
-      if (!isPointInsideTheGrid(grid, point)) continue;
-      yield point;
+      const [x, y] = getNextPoint(beam.point, beam.direction);
+      const isInside = x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
+      if (!isInside) continue;
+      yield [x, y];
 
-      const value = grid[point[0]][point[1]];
+      const value = grid[x][y];
       (BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []).forEach((direction) =>
-        addBeam({ point, direction: direction })
+        addBeam({ point: [x, y], direction: direction })
       );
     }
     beams = newBeams;
