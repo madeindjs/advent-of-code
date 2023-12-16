@@ -31,6 +31,22 @@ function getCombinaisons(line, counts) {
   /** @type {string[]} */
   const results = [];
 
+  const getCurrentCount = (sol) =>
+    sol
+      .split(".")
+      .filter(Boolean)
+      .map((l) => l.length);
+
+  /**
+   *
+   * @param {string} sol
+   */
+  const isPossible = (sol) => {
+    const c = getCurrentCount(sol.split("?")[0]);
+    c.pop();
+    return isArrayDeepEqual(c, counts.slice(0, c.length));
+  };
+
   while (stack.length > 0) {
     const current = stack.pop();
     if (current === undefined) throw Error();
@@ -39,43 +55,18 @@ function getCombinaisons(line, counts) {
     if (index === -1) {
       results.push(current);
     } else {
-      stack.push(setCharAt(current, index, "#"), setCharAt(current, index, "."));
+      const sol1 = setCharAt(current, index, "#");
+      if (isPossible(sol1)) stack.push(sol1);
+
+      const sol2 = setCharAt(current, index, ".");
+      if (isPossible(sol2)) stack.push(sol2);
     }
   }
 
-  return results.filter((line) =>
-    isArrayDeepEqual(
-      line
-        .split(".")
-        .filter(Boolean)
-        .map((l) => l.length),
-      counts
-    )
-  );
+  return results.filter((line) => isArrayDeepEqual(getCurrentCount(line), counts));
 }
 assert.strictEqual(count(getCombinaisons(...parseLine("#.#.### 1,1,3"))), 1);
 assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
-
-// /**
-//  * @param {string} scheme
-//  * @param {number} count
-//  */
-// function* getCombinaisonsForScheme(scheme, count) {
-//   for (let index = 0; index <= scheme.length - count; index++) {
-//     const copy = scheme.replace(/\?/g, ".").split("");
-//     for (let offset = 0; offset < count; offset++) {
-//       copy[index + offset] = "#";
-//     }
-//     const newScheme = copy.join("");
-
-//     if (isCombinaisonValid(newScheme, count)) yield newScheme;
-//   }
-// }
-// assert.deepEqual(Array.from(getCombinaisonsForScheme("??", 1)), ["#.", ".#"]);
-// assert.deepEqual(Array.from(getCombinaisonsForScheme("???", 1)), ["#..", ".#.", "..#"]);
-// assert.deepEqual(Array.from(getCombinaisonsForScheme("???", 2)), ["##.", ".##"]);
-// assert.deepEqual(Array.from(getCombinaisonsForScheme("?##", 3)), ["###"]);
-// assert.deepEqual(Array.from(getCombinaisonsForScheme("??##", 3)), [".###"]);
 
 /**
  * @param {string} lineStr
@@ -88,17 +79,23 @@ function parseLine(lineStr) {
 
 function count(gen) {
   let total = 0;
-  for (const _ of gen) {
-    total++;
-  }
+  for (const _ of gen) total++;
   return total;
 }
 
-// assert.strictEqual(count(getCombinaisons(...parseLine("#.#.### 1,1,3"))), 1);
 assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 function parseFile(file) {
   return readFileSync(file, { encoding: "utf-8" }).split("\n").filter(Boolean).map(parseLine);
+}
+
+/**
+ * @param {string} line
+ * @param {number[]} count
+ * @returns {[string, number[]]}
+ */
+function expandLine(line, count) {
+  return [line.repeat(5), new Array(5).fill(count).flatMap((r) => r)];
 }
 
 function mainA(file) {
@@ -110,4 +107,15 @@ function mainA(file) {
   return total;
 }
 
-console.log(mainA("input.txt"));
+function mainB(file) {
+  let total = 0;
+  for (const [line, counts] of parseFile(file).map(([l, c]) => expandLine(l, c))) {
+    console.log(".");
+    const cmbs = getCombinaisons(line, counts);
+    total += cmbs.length;
+  }
+  return total;
+}
+
+assert.strictEqual(mainA("input.txt"), 7025);
+console.log(mainB("input.txt"));
