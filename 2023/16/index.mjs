@@ -65,9 +65,9 @@ function* getTraversedPoints(grid, start) {
       yield [x, y];
 
       const value = grid[x][y];
-      (BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []).forEach((direction) =>
-        addBeam({ point: [x, y], direction: direction })
-      );
+      for (const direction of BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []) {
+        addBeam({ point: [x, y], direction: direction });
+      }
     }
     beams = newBeams;
   }
