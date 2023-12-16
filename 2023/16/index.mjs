@@ -46,24 +46,22 @@ const BEAM_DIRECTION_MAPPING = {
   "|": { W: ["N", "S"], E: ["N", "S"], N: ["N"], S: ["S"] },
 };
 
-/**
- * @param {Beam} beam
- */
+/** @param {Beam} beam */
 function serializeBeam(beam) {
   return `${beam.point.toString()},${beam.direction}`;
 }
 
 /**
  * @param {Grid} grid
+ * @param {Beam} start
  * @returns {Generator<Point, void, unknown>}
  */
-function* getTraversedPoints(grid) {
+function* getTraversedPoints(grid, start = { point: [0, -1], direction: "E" }) {
   /** @type {Beam[]} */
-  let beams = [{ point: [0, -1], direction: "E" }];
-  const existinsBeams = new Set(serializeBeam(beams[0]));
+  let beams = [start];
+  const existinsBeams = new Set(serializeBeam(start));
 
   while (beams.length > 0) {
-    // console.log(beams);
     /** @type {Beam[]} */
     let newBeams = [];
     const addBeam = (b) => {
@@ -76,11 +74,9 @@ function* getTraversedPoints(grid) {
     for (const beam of beams) {
       const point = getNextPoint(beam.point, beam.direction);
       if (!isPointInsideTheGrid(grid, point)) continue;
-
       yield point;
 
       const value = grid[point[0]][point[1]];
-
       (BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []).forEach((direction) =>
         addBeam({ point, direction: direction })
       );
@@ -89,10 +85,43 @@ function* getTraversedPoints(grid) {
   }
 }
 
-function mainA(file) {
+/**
+ * @param {Grid} grid
+ * @param {Beam} start
+ */
+function computePoints(grid, start = { point: [0, -1], direction: "E" }) {
+  return new Set(Array.from(getTraversedPoints(grid, start)).map((b) => b.toString())).size;
+}
+
+const mainA = (file) => computePoints(parseFile(file));
+
+/**
+ * @param {Grid} grid
+ * @returns {Generator<Beam, void, unknown>}
+ */
+function* getStartingPoints(grid) {
+  const xMax = grid.length - 1;
+  const yMax = grid[0].length - 1;
+
+  for (let x = 0; x <= xMax; x++) {
+    yield { point: [x, -1], direction: "E" };
+    yield { point: [x, yMax + 1], direction: "W" };
+  }
+  for (let y = 0; y <= yMax; y++) {
+    yield { point: [-1, y], direction: "S" };
+    yield { point: [xMax + 1, y], direction: "N" };
+  }
+}
+
+function mainB(file) {
   const grid = parseFile(file);
-  return new Set(Array.from(getTraversedPoints(grid)).map((b) => b.toString())).size;
+  let max = 0;
+  for (const start of getStartingPoints(grid)) max = Math.max(max, computePoints(grid, start));
+  return max;
 }
 
 assert.strictEqual(mainA("spec.txt"), 46);
 assert.strictEqual(mainA("input.txt"), 6605);
+
+assert.strictEqual(mainB("spec.txt"), 51);
+assert.strictEqual(mainB("input.txt"), 6766);
