@@ -91,17 +91,6 @@ function* getTraversedPoints(grid) {
 
 function mainA(file) {
   const grid = parseFile(file);
-
-  // const points = [];
-
-  // for (const point of getTraversedPoints(grid)) {
-  //   points.push(point);
-  //   const newGrid = parseFile(file);
-  //   points.forEach(([x, y]) => (newGrid[x][y] = "#"));
-  //   console.log(newGrid.map((r) => r.join("")).join("\n"));
-  //   console.log("---");
-  // }
-
   return new Set(Array.from(getTraversedPoints(grid)).map((b) => b.toString())).size;
 }
 
