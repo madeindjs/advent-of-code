@@ -20,32 +20,45 @@ function setCharAt(str, index, chr) {
   return str.substring(0, index) + chr + str.substring(index + 1);
 }
 
+function getCurrentCount(sol) {
+  return sol
+    .split(".")
+    .filter(Boolean)
+    .map((l) => l.length);
+}
+
+/**
+ * @param {string[]} combs
+ * @param {number[]} counts
+ */
+function filterCombinaisons(combs, counts) {
+  return combs.filter((line) => isArrayDeepEqual(getCurrentCount(line), counts));
+}
+
+function isPossible(sol, counts) {
+  const c = getCurrentCount(sol.split("?")[0]);
+  c.pop();
+  return isArrayDeepEqual(c, counts.slice(0, c.length));
+}
+
+const getPossibleLinesCache = new Map();
+
 /**
  * @param {string} line
  * @param {number[]} counts
  */
-function getCombinaisons(line, counts) {
+function getPossibleLines(line, counts, check = true) {
   if (!line.includes("?")) return [line];
+
+  const cache = getPossibleLinesCache.get(line);
+
+  if (cache) {
+    return check ? filterCombinaisons(cache, counts) : cache;
+  }
 
   const stack = [line];
   /** @type {string[]} */
   const results = [];
-
-  const getCurrentCount = (sol) =>
-    sol
-      .split(".")
-      .filter(Boolean)
-      .map((l) => l.length);
-
-  /**
-   *
-   * @param {string} sol
-   */
-  const isPossible = (sol) => {
-    const c = getCurrentCount(sol.split("?")[0]);
-    c.pop();
-    return isArrayDeepEqual(c, counts.slice(0, c.length));
-  };
 
   while (stack.length > 0) {
     const current = stack.pop();
@@ -56,17 +69,24 @@ function getCombinaisons(line, counts) {
       results.push(current);
     } else {
       const sol1 = setCharAt(current, index, "#");
-      if (isPossible(sol1)) stack.push(sol1);
-
       const sol2 = setCharAt(current, index, ".");
-      if (isPossible(sol2)) stack.push(sol2);
+
+      if (check) {
+        if (isPossible(sol1, counts)) stack.push(sol1);
+        if (isPossible(sol2, counts)) stack.push(sol2);
+      } else {
+        stack.push(sol1, sol2);
+      }
     }
   }
 
-  return results.filter((line) => isArrayDeepEqual(getCurrentCount(line), counts));
+  return check ? filterCombinaisons(results, counts) : results;
 }
-assert.strictEqual(count(getCombinaisons(...parseLine("#.#.### 1,1,3"))), 1);
-assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
+// {
+//   const [line, count] =
+// }
+// assert.strictEqual(count(getCombinaisons(...parseLine("#.#.### 1,1,3"))), 1);
+// assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 /**
  * @param {string} lineStr
@@ -83,36 +103,54 @@ function count(gen) {
   return total;
 }
 
-assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
+assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 function parseFile(file) {
   return readFileSync(file, { encoding: "utf-8" }).split("\n").filter(Boolean).map(parseLine);
 }
 
-/**
- * @param {string} line
- * @param {number[]} count
- * @returns {[string, number[]]}
- */
-function expandLine(line, count) {
-  return [line.repeat(5), new Array(5).fill(count).flatMap((r) => r)];
-}
-
 function mainA(file) {
   let total = 0;
   for (const [line, counts] of parseFile(file)) {
-    const cmbs = getCombinaisons(line, counts);
+    const cmbs = getPossibleLines(line, counts);
     total += cmbs.length;
   }
   return total;
 }
 
+/**
+ * @template T
+ * @param {T[]} lines
+ * @returns {Generator<string, void, unknown>}
+ */
+function* getAllCombinaisons(lines) {
+  for (let a = 0; a < lines.length; a++) {
+    for (let b = 0; b < lines.length; b++) {
+      for (let c = 0; c < lines.length; c++) {
+        for (let d = 0; d < lines.length; d++) {
+          for (let e = 0; e < lines.length; e++) {
+            yield `${lines[a]}${lines[b]}${lines[c]}${lines[d]}${lines[e]}`;
+          }
+        }
+      }
+    }
+  }
+}
+
+// assert.deepEqual(Array.from(getAllCombinaisons([1, 2, 3])), [1, 1, 1], [1, 2, 1]);
+
 function mainB(file) {
   let total = 0;
-  for (const [line, counts] of parseFile(file).map(([l, c]) => expandLine(l, c))) {
+  for (const [line, counts] of parseFile(file)) {
+    const combinaison = getPossibleLines(line, counts, false);
+    const count5 = new Array(5).fill(count).flatMap((r) => r);
+
+    for (const line of getAllCombinaisons(combinaison)) {
+      // const element = array[a];
+      if (isArrayDeepEqual(getCurrentCount(line), count5)) total++;
+    }
+    // total += cmbs.length;
     console.log(".");
-    const cmbs = getCombinaisons(line, counts);
-    total += cmbs.length;
   }
   return total;
 }
