@@ -12,15 +12,11 @@ function* parseFile(file, expansion = 1) {
     .map((line) => line.split("").map((a) => a === "#"));
 
   function* getXEmptyList() {
-    for (let x = 0; x < map.length; x++) {
-      if (map[x].every((r) => !r)) yield x;
-    }
+    for (let x = 0; x < map.length; x++) if (map[x].every((r) => !r)) yield x;
   }
 
   function* getYEmptyList() {
-    for (let y = 0; y < map[0].length; y++) {
-      if (map.every((r) => !r[y])) yield y;
-    }
+    for (let y = 0; y < map[0].length; y++) if (map.every((r) => !r[y])) yield y;
   }
 
   const xEmptyList = Array.from(getXEmptyList());
@@ -57,9 +53,7 @@ function* getCouples(arr) {
  * @param {Point} a
  * @param {Point} b
  */
-function getDistance(a, b) {
-  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-}
+const getDistance = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
 function main(file, expansion = 1) {
   const points = Array.from(parseFile(file, expansion));
