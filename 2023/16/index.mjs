@@ -38,31 +38,13 @@ function isPointInsideTheGrid(grid, [x, y]) {
   return x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
 }
 
-/**
- * @param {Direction} direction
- * @param {string} type
- * @returns {Direction}
- */
-function getBeamNewDirection(direction, type) {
-  const map = {
-    "/": {
-      N: "E",
-      S: "W",
-      E: "N",
-      W: "S",
-    },
-    "\\": {
-      N: "W",
-      S: "E",
-      W: "N",
-      E: "S",
-    },
-  };
-
-  const newDirection = map[type][direction];
-  if (!newDirection) throw Error();
-  return newDirection;
-}
+const BEAM_DIRECTION_MAPPING = {
+  "/": { N: ["E"], S: ["W"], E: ["N"], W: ["S"] },
+  "\\": { N: ["W"], S: ["E"], W: ["N"], E: ["S"] },
+  ".": { N: ["N"], S: ["S"], W: ["W"], E: ["E"] },
+  "-": { W: ["W"], E: ["E"], N: ["E", "W"], S: ["E", "W"] },
+  "|": { W: ["N", "S"], E: ["N", "S"], N: ["N"], S: ["S"] },
+};
 
 /**
  * @param {Beam} beam
@@ -95,35 +77,13 @@ function* getTraversedPoints(grid) {
       const point = getNextPoint(beam.point, beam.direction);
       if (!isPointInsideTheGrid(grid, point)) continue;
 
-      const value = grid[point[0]][point[1]];
-
       yield point;
 
-      switch (value) {
-        case ".":
-          addBeam({ point, direction: beam.direction });
-          break;
-        case "/":
-        case "\\":
-          addBeam({ point, direction: getBeamNewDirection(beam.direction, value) });
-          break;
-        case "-":
-          if (beam.direction === "W" || beam.direction === "E") {
-            addBeam({ point, direction: beam.direction });
-          } else {
-            addBeam({ point, direction: "E" });
-            addBeam({ point, direction: "W" });
-          }
-          break;
-        case "|":
-          if (beam.direction === "N" || beam.direction === "S") {
-            addBeam({ point, direction: beam.direction });
-          } else {
-            addBeam({ point, direction: "N" });
-            addBeam({ point, direction: "S" });
-          }
-          break;
-      }
+      const value = grid[point[0]][point[1]];
+
+      (BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []).forEach((direction) =>
+        addBeam({ point, direction: direction })
+      );
     }
     beams = newBeams;
   }
@@ -132,7 +92,7 @@ function* getTraversedPoints(grid) {
 function mainA(file) {
   const grid = parseFile(file);
 
-  const points = [];
+  // const points = [];
 
   // for (const point of getTraversedPoints(grid)) {
   //   points.push(point);
