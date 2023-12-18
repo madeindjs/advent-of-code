@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 /**
  * @typedef {number[][]} Grid
  * @typedef {{x: number, y: number}} Point
- * @typedef {{x: number, y: number, direction: number, directionCount: number, distance: number}} Vector
+ * @typedef {{x: number, y: number, direction: number, directionCount: number, distance: number, from?: Point}} Vector
  */
 
 /**
@@ -36,28 +36,19 @@ const colorize = (str) => `\x1b[36m${str}\x1b[0m`;
 function dijkstra(grid, start, end) {
   /** @type {Vector[]} */
   const queue = [
-    { ...start, direction: DIRECTIONS.H, directionCount: 1, distance: 0 },
-    { ...start, direction: DIRECTIONS.V, directionCount: 1, distance: 0 },
+    { ...start, direction: DIRECTIONS.H, directionCount: 1, distance: 0, from: start },
+    { ...start, direction: DIRECTIONS.V, directionCount: 1, distance: 0, from: start },
   ];
 
   /** @type {Map<string, {from?: Vector, distance: number}>} */
   const visited = new Map();
-  /** @type {Map<string, number>} */
-  // const best = new Map();
-  // queue.forEach((p) => visited.set(JSON.stringify(p), { distance: 0 }));
-  // const result = [];
 
-  /**
-   *
-   * @param {Vector} v
-   */
+  /** @param {Vector} v */
   function getVectorKey(v) {
     return `${v.x},${v.y},${v.direction},${v.directionCount}`;
   }
 
-  /**
-   * @returns {Vector}
-   */
+  /** @returns {Vector} */
   function getNext() {
     let minDistance = Infinity;
     let minIndex = -1;
@@ -76,7 +67,7 @@ function dijkstra(grid, start, end) {
   function debug() {
     const clone = structuredClone(grid);
     for (const key of visited.keys()) {
-      const { x, y } = JSON.parse(key);
+      const [x, y] = key.split(",").map(Number);
       // @ts-ignore
       clone[x][y] = colorize(clone[x][y]);
     }
@@ -99,8 +90,10 @@ function dijkstra(grid, start, end) {
       direction: td,
       directionCount: vector.direction === td ? vector.directionCount + 1 : 1,
       distance: vector.distance + grid[vector.x + tx]?.[vector.y + ty],
+      from: { x: vector.x, y: vector.y },
     }))
       .filter(({ directionCount }) => directionCount <= 3)
+      .filter(({ x, y }) => !(x === vector.from?.x && y === vector.from?.y))
       .filter(({ x, y }) => grid[x]?.[y] !== undefined);
 
     for (const next of neighbors) {
@@ -129,4 +122,4 @@ function mainA(file) {
 assert.strictEqual(mainA("spec.txt"), 102);
 console.log("test done");
 const a = mainA("input.txt");
-assert.ok(a < 749);
+assert.strictEqual(a, 755);
