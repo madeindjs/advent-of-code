@@ -7,9 +7,7 @@ import { readFileSync } from "node:fs";
  * @typedef {{x: number, y: number, direction: number, directionCount: number, distance: number, from?: Vector}} Vector
  */
 
-/**
- * @returns {Grid}
- */
+/** @returns {Grid} */
 function parseFile(file) {
   return readFileSync(file, { encoding: "utf-8" })
     .split("\n")
@@ -24,8 +22,6 @@ const MOVES = Object.freeze([
   [0, 1, DIRECTIONS.H],
   [-1, 0, DIRECTIONS.V],
 ]);
-
-const colorize = (str) => `\x1b[36m${str}\x1b[0m`;
 
 /**
  * @param {Grid} grid
@@ -45,10 +41,7 @@ function dijkstra(grid, start, end, directionConstraints) {
   const visited = new Map();
 
   /** @param {Vector} v */
-  function getVectorKey(v) {
-    // return v.x << 4 | v.y << 8 | v.directionCount <<
-    return `${v.x},${v.y},${v.direction},${v.directionCount},${v.from?.x},${v.from?.y}`;
-  }
+  const getVectorKey = (v) => `${v.x},${v.y},${v.direction},${v.directionCount},${v.from?.x},${v.from?.y}`;
 
   /** @returns {Vector} */
   function getNext() {
@@ -64,32 +57,6 @@ function dijkstra(grid, start, end, directionConstraints) {
     }
 
     return queue.splice(minIndex, 1)?.[0];
-  }
-
-  function debug() {
-    const clone = structuredClone(grid);
-    for (const key of visited.keys()) {
-      const [x, y] = key.split(",").map(Number);
-      // @ts-ignore
-      clone[x][y] = colorize(clone[x][y]);
-    }
-    console.log(clone.map((r) => r.join("")).join("\n"));
-  }
-
-  /** @param {Vector} v */
-  function printSolution(v) {
-    const clone = structuredClone(grid);
-
-    let current = v.from;
-    while (current) {
-      const { x, y } = current;
-      // @ts-ignore
-      clone[x][y] = colorize(clone[x][y]);
-      // @ts-ignore
-      current = visited.get(getVectorKey(current))?.from;
-    }
-
-    console.log(clone.map((r) => r.join("")).join("\n"));
   }
 
   while (true) {
@@ -116,19 +83,10 @@ function dijkstra(grid, start, end, directionConstraints) {
 
     for (const next of neighbors) {
       if (end.x === next.x && end.y === next.y) {
-        if (next.directionCount >= directionConstraints.min) {
-          if (process.env.DEBUG) printSolution(next);
-
-          return next.distance;
-        }
+        if (next.directionCount >= directionConstraints.min) return next.distance;
       } else {
         queue.push(next);
       }
-    }
-
-    if (false) {
-      console.log();
-      debug();
     }
   }
 }
@@ -152,15 +110,13 @@ function main(file, directionConstraints) {
 const mainA = (file) => main(file, { min: 0, max: 3 });
 const mainB = (file) => main(file, { min: 4, max: 10 });
 
-// assert.strictEqual(mainA("spec.txt"), 102);
-// const a = mainA("input.txt");
-// assert.strictEqual(a, 755);
-// console.log("part A", a);
+assert.strictEqual(mainA("spec.txt"), 102);
+const a = mainA("input.txt");
+assert.strictEqual(a, 755);
+console.log("part A", a);
 
 assert.strictEqual(mainB("spec.txt"), 94);
 assert.strictEqual(mainB("spec2.txt"), 71);
-console.log("test done");
 const b = mainB("input.txt");
-// assert.strictEqual(b, 755);
+assert.strictEqual(b, 881);
 console.log("part B", b);
-assert.ok(b > 879);
