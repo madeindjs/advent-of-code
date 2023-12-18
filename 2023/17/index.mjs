@@ -1,9 +1,10 @@
+import assert from "node:assert";
 import { readFileSync } from "node:fs";
 
 /**
  * @typedef {number[][]} Grid
- * @typedef {[x: number, y: number]} Point
- * @typedef {[x: number, y: number, direction: number, directionCount: number, distance: number]} Vector
+ * @typedef {{x: number, y: number}} Point
+ * @typedef {{x: number, y: number, direction: number, directionCount: number}} Vector
  */
 
 /**
@@ -24,31 +25,88 @@ const MOVES = Object.freeze([
   [-1, 0, DIRECTIONS.V],
 ]);
 
-function* bfs(grid) {
+const colorize = (str) => `\x1b[36m${str}\x1b[0m`;
+
+/**
+ * @param {Grid} grid
+ * @param {Point} start
+ * @param {Point} end
+ * @returns
+ */
+function dijkstra(grid, start, end) {
   /** @type {Vector[]} */
   const queue = [
-    [0, 0, DIRECTIONS.H, 1, 0],
-    [0, 0, DIRECTIONS.V, 1, 0],
+    { ...start, direction: DIRECTIONS.H, directionCount: 1 },
+    { ...start, direction: DIRECTIONS.V, directionCount: 1 },
   ];
-  const visited = new Set();
+
+  /** @type {Map<string, {from?: Vector, distance: number}>} */
+  const visited = new Map();
+  queue.forEach((p) => visited.set(JSON.stringify(p), { distance: 0 }));
   const result = [];
 
-  while (queue.length) {
-    const vector = queue.shift();
+  function getNext() {
+    let minDistance = -Infinity;
+    let minKey = "";
+
+    for (const [key, { distance }] of visited.entries()) {
+      if (minDistance < distance) {
+        minDistance = distance;
+        minKey = key;
+      }
+    }
+
+    return JSON.parse(minKey);
+  }
+
+  function debug() {
+    const clone = structuredClone(grid);
+    for (const key of visited.keys()) {
+      const { x, y } = JSON.parse(key);
+      // @ts-ignore
+      clone[x][y] = colorize(clone[x][y]);
+    }
+    console.log(clone.map((r) => r.join("")).join("\n"));
+  }
+
+  while (true) {
+    const vector = getNext();
     if (!vector) throw Error;
-    const [x, y, direction, count] = vector;
-    const vectorKey = vector.toString();
 
-    if (visited.has(vectorKey)) continue;
+    const vectorKey = JSON.stringify(vector);
 
-    visited.add(vectorKey);
+    const prevDistance = visited.get(vectorKey);
+    if (prevDistance === undefined) throw Error;
 
-    const neighbors = MOVES.map(([tx, ty, td]) => [x + tx, y + ty, td, direction === td ? count + 1 : 1])
-      .filter(([x, y, d, c]) => c <= 3)
-      .filter(([x, y]) => grid[x]?.[y] !== undefined);
+    const neighbors = MOVES.map(([tx, ty, td]) => ({
+      x: vector.x + tx,
+      y: vector.y + ty,
+      direction: td,
+      directionCount: vector.direction === td ? vector.directionCount + 1 : 1,
+      // distance: vector.distance + grid[vector.x + tx]?.[vector.y + ty],
+    }))
+      .filter(({ directionCount }) => directionCount <= 3)
+      .filter(({ x, y }) => grid[x]?.[y] !== undefined);
 
     for (const next of neighbors) {
-      console.log(next);
+      const nextKey = JSON.stringify(next);
+      if (visited.has(nextKey)) continue;
+
+      const newDistance = prevDistance.distance + grid[next.x]?.[next.y];
+
+      const existsingDistance = visited.get(nextKey)?.distance ?? Infinity;
+
+      if (existsingDistance > newDistance) {
+        visited.set(nextKey, { distance: newDistance, from: vector });
+        // queue.push(next);
+
+        if (end.x === next.x && end.y === next.y) return newDistance;
+      } else {
+        // console.log(next);
+      }
+
+      debug();
+      console.log();
     }
 
     // if (!visited.has(vertex)) {
@@ -67,13 +125,11 @@ function* bfs(grid) {
 function mainA(file) {
   const grid = parseFile(file);
   /** @type {Point} */
-  const start = [0, 0];
+  const start = { x: 0, y: 0 };
   /** @type {Point} */
-  const end = [grid.length - 1, grid[0].length - 1];
+  const end = { x: grid.length - 1, y: grid[0].length - 1 };
 
-  for (const path of bfs(grid, start, end)) {
-    console.log(path);
-  }
+  return dijkstra(grid, start, end);
 }
 
-mainA("spec.txt");
+assert.strictEqual(mainA("spec.txt"), 102);
