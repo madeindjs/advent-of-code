@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 /**
  * @typedef {number[][]} Grid
  * @typedef {{x: number, y: number}} Point
- * @typedef {{x: number, y: number, direction: number, directionCount: number}} Vector
+ * @typedef {{x: number, y: number, direction: number, directionCount: number, distance: number}} Vector
  */
 
 /**
@@ -31,32 +31,46 @@ const colorize = (str) => `\x1b[36m${str}\x1b[0m`;
  * @param {Grid} grid
  * @param {Point} start
  * @param {Point} end
- * @returns
+ * @returns {number}
  */
 function dijkstra(grid, start, end) {
   /** @type {Vector[]} */
   const queue = [
-    { ...start, direction: DIRECTIONS.H, directionCount: 1 },
-    { ...start, direction: DIRECTIONS.V, directionCount: 1 },
+    { ...start, direction: DIRECTIONS.H, directionCount: 1, distance: 0 },
+    { ...start, direction: DIRECTIONS.V, directionCount: 1, distance: 0 },
   ];
 
   /** @type {Map<string, {from?: Vector, distance: number}>} */
   const visited = new Map();
-  queue.forEach((p) => visited.set(JSON.stringify(p), { distance: 0 }));
-  const result = [];
+  /** @type {Map<string, number>} */
+  // const best = new Map();
+  // queue.forEach((p) => visited.set(JSON.stringify(p), { distance: 0 }));
+  // const result = [];
 
+  /**
+   *
+   * @param {Vector} v
+   */
+  function getVectorKey(v) {
+    return `${v.x},${v.y},${v.direction},${v.directionCount}`;
+  }
+
+  /**
+   * @returns {Vector}
+   */
   function getNext() {
-    let minDistance = -Infinity;
-    let minKey = "";
+    let minDistance = Infinity;
+    let minIndex = -1;
 
-    for (const [key, { distance }] of visited.entries()) {
-      if (minDistance < distance) {
-        minDistance = distance;
-        minKey = key;
+    for (let index = 0; index < queue.length; index++) {
+      const v = queue[index];
+      if (v.distance < minDistance) {
+        minDistance = v.distance;
+        minIndex = index;
       }
     }
 
-    return JSON.parse(minKey);
+    return queue.splice(minIndex, 1)?.[0];
   }
 
   function debug() {
@@ -71,55 +85,35 @@ function dijkstra(grid, start, end) {
 
   while (true) {
     const vector = getNext();
-    if (!vector) throw Error;
+    if (!vector) throw new Error();
+    // if (!vector) return best.get(`${end.x},${end.y}`) ?? Infinity;
 
-    const vectorKey = JSON.stringify(vector);
+    const vectorKey = getVectorKey(vector);
+    if (visited.has(vectorKey)) continue;
 
-    const prevDistance = visited.get(vectorKey);
-    if (prevDistance === undefined) throw Error;
+    visited.set(vectorKey, { distance: vector.distance });
 
     const neighbors = MOVES.map(([tx, ty, td]) => ({
       x: vector.x + tx,
       y: vector.y + ty,
       direction: td,
       directionCount: vector.direction === td ? vector.directionCount + 1 : 1,
-      // distance: vector.distance + grid[vector.x + tx]?.[vector.y + ty],
+      distance: vector.distance + grid[vector.x + tx]?.[vector.y + ty],
     }))
       .filter(({ directionCount }) => directionCount <= 3)
       .filter(({ x, y }) => grid[x]?.[y] !== undefined);
 
     for (const next of neighbors) {
-      const nextKey = JSON.stringify(next);
-      if (visited.has(nextKey)) continue;
+      if (end.x === next.x && end.y === next.y) return next.distance;
 
-      const newDistance = prevDistance.distance + grid[next.x]?.[next.y];
-
-      const existsingDistance = visited.get(nextKey)?.distance ?? Infinity;
-
-      if (existsingDistance > newDistance) {
-        visited.set(nextKey, { distance: newDistance, from: vector });
-        // queue.push(next);
-
-        if (end.x === next.x && end.y === next.y) return newDistance;
-      } else {
-        // console.log(next);
-      }
-
-      debug();
-      console.log();
+      queue.push(next);
     }
 
-    // if (!visited.has(vertex)) {
-    //   visited.add(vertex);
-    //   yield vertex;
-
-    //   for (const neighbor of grid[vertex]) {
-    //     queue.push(neighbor);
-    //   }
-    // }
+    if (false) {
+      console.log();
+      debug();
+    }
   }
-
-  return result;
 }
 
 function mainA(file) {
@@ -133,3 +127,6 @@ function mainA(file) {
 }
 
 assert.strictEqual(mainA("spec.txt"), 102);
+console.log("test done");
+const a = mainA("input.txt");
+assert.ok(a < 749);
