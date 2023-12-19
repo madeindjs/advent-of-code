@@ -27,11 +27,6 @@ function parseFile(file) {
     });
 }
 
-// class Grid {
-//   /** @type {string[][]} */
-//   data = [];
-// }
-
 /**
  * @param {Point[]} points
  */
@@ -103,15 +98,22 @@ function* getPointsByValue(grid, value) {
 
 /**
  * @param {Grid} grid
+ * @param {Point} param1
+ * @returns {Point[]}
+ */
+function getNeighbors(grid, [x, y], value = " ") {
+  // @ts-ignore
+  return Object.values(MOVES)
+    .map(([tx, ty]) => [x + tx, y + ty])
+    .filter(([x, y]) => grid[x]?.[y] === value);
+}
+
+/**
+ * @param {Grid} grid
  * @param {Point} point
  * @param {string} value
  */
 function fillSpaces(grid, point, value) {
-  const getNeighbors = ([x, y]) =>
-    Object.values(MOVES)
-      .map(([tx, ty]) => [x + tx, y + ty])
-      .filter(([x, y]) => grid[x]?.[y] === " ");
-
   const stack = [point];
 
   while (stack.length) {
@@ -119,7 +121,7 @@ function fillSpaces(grid, point, value) {
     if (p === undefined) throw "should not happens";
     grid[p[0]][p[1]] = value;
 
-    stack.push(...getNeighbors(p));
+    stack.push(...getNeighbors(grid, p, " "));
   }
 }
 
@@ -132,13 +134,10 @@ function mainA(file) {
     if (value === " ") fillSpaces(grid, [x, y], ".");
   }
 
-  // console.log(grid.map((r) => r.join("")).join("\n"));
-
   return Array.from(getPointsByValue(grid, " ")).length + Array.from(getPointsByValue(grid, "#")).length;
-  // console.log(Array.from(getBorderPoints(grid)));
 }
 
 assert.strictEqual(mainA("spec.txt"), 62);
 const a = mainA("input.txt");
-assert.ok(a > 40083);
+assert.strictEqual(a, 47045);
 console.log(a);
