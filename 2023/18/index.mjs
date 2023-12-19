@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { readFileSync } from "node:fs";
 
 /**
@@ -26,8 +27,12 @@ function parseFile(file) {
     });
 }
 
+// class Grid {
+//   /** @type {string[][]} */
+//   data = [];
+// }
+
 /**
- *
  * @param {Point[]} points
  */
 function drawGrid(points) {
@@ -36,45 +41,104 @@ function drawGrid(points) {
 
   const pointsOffset = points.map(([x, y]) => [x + xOffset, y + yOffset]);
 
-  const xMax = Math.max(...pointsOffset.map((p) => p[0]));
   const yMax = Math.max(...pointsOffset.map((p) => p[1]));
 
   /** @type {Grid} */
   const grid = [];
 
   for (const [x, y] of pointsOffset) {
-    grid[x] ??= new Array(yMax + 1).fill("");
+    grid[x] ??= new Array(yMax + 1).fill(" ");
     grid[x][y] = "#";
   }
 
   return grid;
 }
 
-function mainA(file) {
-  /** @type {Point[]} */
-  const points = [[0, 0]];
+/**
+ * @param {Instruction[]} instructions
+ * @returns {Generator<Point, void, unknown>}
+ */
+function* computePoints(instructions) {
+  /** @type {Point} */
+  let point = [0, 0];
 
-  /**
-   * @param {Point} move
-   * @param {number} count
-   */
-  function movePoint([tx, ty], count) {
-    let [x, y] = points[0];
-
-    for (let index = 1; index <= count; index++) {
-      points.push([x + tx * index, y + ty * index]);
-    }
-  }
-
-  for (const [direction, count] of parseFile(file)) {
+  for (const [direction, count] of instructions) {
     const move = MOVES[direction];
     if (move === undefined) throw `Could not get move for ${direction}`;
-    movePoint(move, count);
+
+    for (let index = 1; index <= count; index++) {
+      point = [point[0] + move[0], point[1] + move[1]];
+      yield point;
+    }
   }
-
-  const grid = drawGrid(points);
-
-  console.log(grid.map((r) => r.join("")).join("\n"));
 }
 
-console.log(mainA("spec.txt"));
+/**
+ *
+ * @param {Grid} grid
+ */
+function* getBorderPoints(grid) {
+  for (let x = 0; x < grid.length; x++) {
+    yield [x, 0];
+    yield [x, grid[x].length - 1];
+  }
+  for (let y = 0; y < grid[0].length; y++) {
+    yield [0, y];
+    yield [grid.length - 1, y];
+  }
+}
+
+/**
+ * @param {Grid} grid
+ * @returns {Generator<Point, void, unknown>}
+ */
+function* getPointsByValue(grid, value) {
+  for (let x = 0; x < grid.length; x++) {
+    const row = grid[x];
+    for (let y = 0; y < row.length; y++) {
+      if (row[y] === value) yield [x, y];
+    }
+  }
+}
+
+/**
+ * @param {Grid} grid
+ * @param {Point} point
+ * @param {string} value
+ */
+function fillSpaces(grid, point, value) {
+  const getNeighbors = ([x, y]) =>
+    Object.values(MOVES)
+      .map(([tx, ty]) => [x + tx, y + ty])
+      .filter(([x, y]) => grid[x]?.[y] === " ");
+
+  const stack = [point];
+
+  while (stack.length) {
+    const p = stack.pop();
+    if (p === undefined) throw "should not happens";
+    grid[p[0]][p[1]] = value;
+
+    stack.push(...getNeighbors(p));
+  }
+}
+
+function mainA(file) {
+  const points = Array.from(computePoints(parseFile(file)));
+  const grid = drawGrid(points);
+
+  for (const [x, y] of getBorderPoints(grid)) {
+    const value = grid[x][y];
+    if (value === " ") fillSpaces(grid, [x, y], ".");
+  }
+
+  // console.log(grid.map((r) => r.join("")).join("\n"));
+
+  return Array.from(getPointsByValue(grid, " ")).length + Array.from(getPointsByValue(grid, "#")).length;
+  // console.log(Array.from(getBorderPoints(grid)));
+}
+
+assert.strictEqual(mainA("spec.txt"), 62);
+const a = mainA("input.txt");
+assert.ok(a > 40083);
+console.log(a);
