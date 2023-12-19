@@ -176,6 +176,11 @@ function part2(visitedMap) {
       yield { x, y: 0 };
       yield { x, y: visitedMap[x].length - 1 };
     }
+
+    for (let y = 0; y < visitedMap[0].length; y++) {
+      yield { x: 0, y };
+      yield { x: visitedMap.length - 1, y };
+    }
   }
 
   let stack = Array.from(getFrameWork());
