@@ -4,7 +4,8 @@ import { URL } from "node:url";
 
 /**
  * @typedef {[value: string, operator: '>' | '<', target: number, destination: string]} Action
- * @typedef {{name: string, defaultDest: string, actions: Action[]}} Instruction
+ * @typedef {{defaultDest: string, actions: Action[]}} Instruction
+ * @typedef {Record<string, Instruction>} Instructions
  * @typedef {Record<string, number>} Ratings
  */
 
@@ -22,7 +23,7 @@ function parseAction(str) {
 
 /**
  * @param {string} line
- * @returns {Instruction}
+ * @returns {[name: string, Instruction]}
  */
 function parseInstruction(line) {
   const match = line.match(/([A-z]+)\{(.*)\}/);
@@ -33,17 +34,18 @@ function parseInstruction(line) {
   const defaultDest = bodyArr.pop();
   if (defaultDest === undefined) throw `Don't have default: ${line}`;
 
-  // @ts-ignore
-  return { name, defaultDest, actions: bodyArr.map(parseAction) };
+  return [name, { defaultDest, actions: bodyArr.map(parseAction) }];
 }
-deepEqual(parseInstruction("px{a<2006:qkq,m>2090:A,rfg}"), {
-  name: "px",
-  actions: [
-    ["a", "<", 2006, "qkq"],
-    ["m", ">", 2090, "A"],
-  ],
-  defaultDest: "rfg",
-});
+deepEqual(parseInstruction("px{a<2006:qkq,m>2090:A,rfg}"), [
+  "px",
+  {
+    actions: [
+      ["a", "<", 2006, "qkq"],
+      ["m", ">", 2090, "A"],
+    ],
+    defaultDest: "rfg",
+  },
+]);
 
 /**
  * @param {string} line
@@ -64,25 +66,25 @@ deepEqual(parseRatings("{x=787,m=2655,a=1222,s=2876}"), { x: 787, m: 2655, a: 12
 /**
  *
  * @param {string} file
- * @returns {[instructions: Instruction[], ratings: Ratings[]]}
+ * @returns {[instructions: Map<string, Instruction>, ratings: Ratings[]]}
  */
 function parseFile(file) {
   const [instructions, ratings] = readFileSync(new URL(file, import.meta.url), { encoding: "utf-8" })
     .split("\n\n")
     .map((raw) => raw.split("\n"));
 
-  return [instructions.map(parseInstruction), ratings.map(parseRatings)];
+  return [new Map(instructions.map(parseInstruction)), ratings.map(parseRatings)];
 }
 
 /**
  * @param {Ratings} ratings
- * @param {Instruction[]} instructions
+ * @param {Map<string, Instruction>} instructions
  */
 function computeRatings(ratings, instructions) {
   let current = "in";
 
   while (current !== "R" && current !== "A") {
-    const ins = instructions.find(({ name }) => name === current);
+    const ins = instructions.get(current);
     if (ins === undefined) throw `Cannot find instruction for ${current}`;
 
     current =
@@ -107,7 +109,7 @@ function main(file) {
 }
 
 strictEqual(main("./spec.txt"), 19114);
-console.log(main("./input.txt"));
+strictEqual(main("./input.txt"), 376008);
 
 // const mainA = (file) => main(parseFile(file));
 // assert.strictEqual(mainA("./spec.txt"), 62);
