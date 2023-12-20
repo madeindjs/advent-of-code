@@ -1,10 +1,10 @@
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 
 /**
  * @typedef {[x: number, y: number]} Point
- * @typedef {[direction: string, count: number, hex: string]} Instruction
- * @typedef {string[][]} Grid
+ * @typedef {[direction: string, count: number]} Instruction
  */
 
 /** @type {Record<string, Point>} */
@@ -18,126 +18,76 @@ const MOVES = {
 /**
  * @returns {Instruction[]}
  */
-function parseFile(file) {
-  return readFileSync(file, { encoding: "utf-8" })
+function parseInstructions(file) {
+  return readFileSync(new URL(file, import.meta.url), { encoding: "utf-8" })
     .split("\n")
     .map((r) => {
       const [direction, count, hex] = r.split(" ");
-      return [direction, Number(count), hex];
+      return [direction, Number(count)];
     });
 }
 
 /**
- * @param {Point[]} points
+ * @returns {Instruction[]}
  */
-function drawGrid(points) {
-  const xOffset = Math.abs(Math.min(...points.map((p) => p[0])));
-  const yOffset = Math.abs(Math.min(...points.map((p) => p[1])));
+function parseInstructionHex(file) {
+  return readFileSync(new URL(file, import.meta.url), { encoding: "utf-8" })
+    .split("\n")
+    .map((r) => {
+      const match = r.match(/\(#(.{6})\)/);
+      if (!match) throw "Cannot get HEX";
 
-  const pointsOffset = points.map(([x, y]) => [x + xOffset, y + yOffset]);
+      const count = parseInt(match[1].slice(0, 5), 16);
+      const directionIndex = parseInt(match[1].slice(5), 16);
+      const DIRECTIONS = ["R", "D", "L", "U"];
 
-  const yMax = Math.max(...pointsOffset.map((p) => p[1]));
-
-  /** @type {Grid} */
-  const grid = [];
-
-  for (const [x, y] of pointsOffset) {
-    grid[x] ??= new Array(yMax + 1).fill(" ");
-    grid[x][y] = "#";
-  }
-
-  return grid;
+      return [DIRECTIONS[directionIndex], count];
+    });
 }
 
 /**
  * @param {Instruction[]} instructions
- * @returns {Generator<Point, void, unknown>}
+ * @returns {Generator<[from: Point, to: Point], void, unknown>}
  */
-function* computePoints(instructions) {
-  /** @type {Point} */
-  let point = [0, 0];
+function* computeLine(instructions) {
+  let x = 0;
+  let y = 0;
 
   for (const [direction, count] of instructions) {
     const move = MOVES[direction];
     if (move === undefined) throw `Could not get move for ${direction}`;
+    const xN = x + move[0] * count;
+    const yN = y + move[1] * count;
 
-    for (let index = 1; index <= count; index++) {
-      point = [point[0] + move[0], point[1] + move[1]];
-      yield point;
-    }
+    yield [
+      [x, y],
+      [xN, yN],
+    ];
+    x = xN;
+    y = yN;
   }
 }
 
-/**
- *
- * @param {Grid} grid
- */
-function* getBorderPoints(grid) {
-  for (let x = 0; x < grid.length; x++) {
-    yield [x, 0];
-    yield [x, grid[x].length - 1];
-  }
-  for (let y = 0; y < grid[0].length; y++) {
-    yield [0, y];
-    yield [grid.length - 1, y];
-  }
-}
+function main(instructions) {
+  let areaTmp = 0;
+  let perimeterTmp = 0;
 
-/**
- * @param {Grid} grid
- * @returns {Generator<Point, void, unknown>}
- */
-function* getPointsByValue(grid, value) {
-  for (let x = 0; x < grid.length; x++) {
-    const row = grid[x];
-    for (let y = 0; y < row.length; y++) {
-      if (row[y] === value) yield [x, y];
-    }
-  }
-}
-
-/**
- * @param {Grid} grid
- * @param {Point} param1
- * @returns {Point[]}
- */
-function getNeighbors(grid, [x, y], value = " ") {
-  // @ts-ignore
-  return Object.values(MOVES)
-    .map(([tx, ty]) => [x + tx, y + ty])
-    .filter(([x, y]) => grid[x]?.[y] === value);
-}
-
-/**
- * @param {Grid} grid
- * @param {Point} point
- * @param {string} value
- */
-function fillSpaces(grid, point, value) {
-  const stack = [point];
-
-  while (stack.length) {
-    const p = stack.pop();
-    if (p === undefined) throw "should not happens";
-    grid[p[0]][p[1]] = value;
-
-    stack.push(...getNeighbors(grid, p, " "));
-  }
-}
-
-function mainA(file) {
-  const points = Array.from(computePoints(parseFile(file)));
-  const grid = drawGrid(points);
-
-  for (const [x, y] of getBorderPoints(grid)) {
-    const value = grid[x][y];
-    if (value === " ") fillSpaces(grid, [x, y], ".");
+  for (const [[x1, y1], [x2, y2]] of computeLine(instructions)) {
+    areaTmp += x1 * y2 - x2 * y1;
+    perimeterTmp += Math.abs(Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)));
   }
 
-  return Array.from(getPointsByValue(grid, " ")).length + Array.from(getPointsByValue(grid, "#")).length;
+  return Math.abs(areaTmp / 2) + perimeterTmp / 2 + 1;
 }
 
-assert.strictEqual(mainA("spec.txt"), 62);
-const a = mainA("input.txt");
+const mainA = (file) => main(parseInstructions(file));
+assert.strictEqual(mainA("./spec.txt"), 62);
+const a = mainA("./input.txt");
 assert.strictEqual(a, 47045);
 console.log(a);
+
+const mainB = (file) => main(parseInstructionHex(file));
+assert.strictEqual(mainB("./spec.txt"), 952408144115);
+const b = mainB("input.txt");
+assert.strictEqual(b, 147839570293376);
+console.log(b);
