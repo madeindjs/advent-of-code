@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { URL } from "node:url";
 
 /**
- * @typedef {[value: string, operator: '>' | '<', target: number, destination: string]} Action
- * @typedef {{defaultDest: string, actions: Action[]}} Instruction
+ * @typedef {{value: string, operator: string, target: number, destination: string}} Action
+ * @typedef {{name: string, defaultDest: string, actions: Action[]}} Instruction
  * @typedef {Record<string, Instruction>} Instructions
  * @typedef {Record<string, number>} Ratings
  */
@@ -17,8 +17,7 @@ function parseAction(str) {
   const m = str.match(/([A-z]+)(<|>)([0-9]+):([A-z]+)/);
   if (!m) throw `can't parse action: ${str}`;
   const [_, value, operator, target, destination] = m;
-  // @ts-ignore
-  return [value, operator, Number(target), destination];
+  return { value, operator, target: Number(target), destination };
 }
 
 /**
@@ -34,14 +33,15 @@ function parseInstruction(line) {
   const defaultDest = bodyArr.pop();
   if (defaultDest === undefined) throw `Don't have default: ${line}`;
 
-  return [name, { defaultDest, actions: bodyArr.map(parseAction) }];
+  return [name, { name, defaultDest, actions: bodyArr.map(parseAction) }];
 }
 deepEqual(parseInstruction("px{a<2006:qkq,m>2090:A,rfg}"), [
   "px",
   {
+    name: "px",
     actions: [
-      ["a", "<", 2006, "qkq"],
-      ["m", ">", 2090, "A"],
+      { value: "a", operator: "<", target: 2006, destination: "qkq" },
+      { value: "m", operator: ">", target: 2090, destination: "A" },
     ],
     defaultDest: "rfg",
   },
@@ -88,15 +88,15 @@ function computeRatings(ratings, instructions) {
     if (ins === undefined) throw `Cannot find instruction for ${current}`;
 
     current =
-      ins.actions.find(([value, operator, target]) =>
+      ins.actions.find(({ value, operator, target }) =>
         operator === "<" ? ratings[value] < target : ratings[value] > target
-      )?.[3] ?? ins.defaultDest;
+      )?.destination ?? ins.defaultDest;
   }
 
   return current;
 }
 
-function main(file) {
+function mainA(file) {
   const [instructions, ratings] = parseFile(file);
   let total = 0;
 
@@ -108,14 +108,140 @@ function main(file) {
   return total;
 }
 
-strictEqual(main("./spec.txt"), 19114);
-strictEqual(main("./input.txt"), 376008);
+strictEqual(mainA("./spec.txt"), 19114);
+strictEqual(mainA("./input.txt"), 376008);
 
-// const mainA = (file) => main(parseFile(file));
-// assert.strictEqual(mainA("./spec.txt"), 62);
-// const a = mainA("./input.txt");
-// assert.strictEqual(a, 47045);
-// console.log(a);
+// part B
+
+/**
+ * @typedef {Record<string, number[]>} Xmas
+ */
+
+function* getNumbers(from, to) {
+  for (let i = from; i <= to; i++) yield i;
+}
+
+/**
+ * @param {Map<string, Instruction>} instructions
+ * @param {string} goal
+ * @param {Xmas} xmas
+ */
+function filterCombinaisons(instructions, goal, xmas = buildXmas()) {
+  const possibilities = Array.from(instructions.values()).filter(
+    (i) => i.defaultDest === goal || i.actions.some((a) => a.destination === goal)
+  );
+
+  for (const poss of possibilities) {
+    if (poss.defaultDest === goal) {
+      filterDefaultDest(xmas, poss.actions);
+    } else {
+      filterTarget(xmas, poss.actions, goal);
+    }
+    if (poss.name !== "in") filterCombinaisons(instructions, poss.name, xmas);
+  }
+
+  return xmas;
+}
+
+/**
+ * @param {number[]} arr
+ */
+function removeNumbers(arr, from, to) {
+  for (const n of getNumbers(from, to)) {
+    const i = arr.findIndex((a) => a === n);
+    if (i !== -1) arr.splice(i, 1);
+  }
+  return arr;
+}
+deepEqual(removeNumbers([1, 2, 3, 4], 2, 3), [1, 4]);
+
+/**
+ * @returns {Xmas}
+ */
+function buildXmas() {
+  let k4 = Array.from(getNumbers(1, 4000));
+  return {
+    x: [...k4],
+    m: [...k4],
+    a: [...k4],
+    s: [...k4],
+  };
+}
+
+/**
+ *
+ * @param {Xmas} xmas
+ * @param {Action[]} actions
+ */
+function filterDefaultDest(xmas, actions) {
+  for (const { value, operator, target } of actions) {
+    const range = operator === ">" ? [target, 4000] : [0, target - 1];
+    // @ts-ignore
+    removeNumbers(xmas[value], ...range);
+  }
+}
+
+/**
+ *
+ * @param {Xmas} xmas
+ * @param {Action[]} actions
+ */
+function filterTarget(xmas, actions, goal) {
+  for (const { value, operator, target } of actions.filter((a) => a.destination === goal)) {
+    const range = operator === "<" ? [target, 4000] : [0, target];
+    // @ts-ignore
+    console.log(range);
+    removeNumbers(xmas[value], ...range);
+  }
+}
+
+function mainB(file) {
+  const [instructions] = parseFile(file);
+
+  const endings = Array.from(instructions.values()).filter(
+    (i) => i.defaultDest === "A" || i.actions.some((a) => a.destination === "A")
+  );
+
+  // const combinaisons = endings.map((e) => filterCombinaisons(instructions, e.name));
+  /** @type {Xmas[]} */
+  let temp = [];
+
+  for (const poss of endings) {
+    const xmas = buildXmas();
+    if (poss.defaultDest === "A") {
+      filterDefaultDest(xmas, poss.actions);
+    } else {
+      filterTarget(xmas, poss.actions, "A");
+    }
+    temp.push(filterCombinaisons(instructions, poss.name, xmas));
+  }
+
+  const x = new Set();
+  const m = new Set();
+  const a = new Set();
+  const s = new Set();
+
+  let total = 0;
+
+  for (const xmas of temp) {
+    total += xmas.x.length * xmas.m.length * xmas.a.length * xmas.s.length;
+    xmas.x.forEach((v) => x.add(v));
+    xmas.m.forEach((v) => m.add(v));
+    xmas.a.forEach((v) => a.add(v));
+    xmas.s.forEach((v) => s.add(v));
+  }
+  console.log(x.size, m.size, a.size, s.size);
+  // return x.size * m.size * a.size * s.size;
+  return total;
+}
+
+strictEqual(mainB("./spec2.txt"), 1);
+strictEqual(mainB("./spec3.txt"), 1 * 4000 * 4000 * 4000);
+strictEqual(mainB("./spec4.txt"), 1 * 1 * 4000 * 4000);
+strictEqual(mainB("./spec4b.txt"), 1 * 1 * 4000 * 4000);
+strictEqual(mainB("./spec5.txt"), 1);
+strictEqual(mainB("./spec.txt"), 167409079868000);
+strictEqual(mainB("./spec.txt"), 167409079868000);
 
 // const mainB = (file) => main(parseInstructionHex(file));
 // assert.strictEqual(mainB("./spec.txt"), 952408144115);
