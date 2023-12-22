@@ -44,18 +44,34 @@ class Tree {
    * @param {Point} point
    * @param {Tree[]} children
    * @param {number} levelMax
+   * @param {Map<string, Node>} cache
    */
-  constructor(level, point, children = [], levelMax) {
+  constructor(level, point, children = [], levelMax, cache = new Map()) {
     this.level = level;
     this.point = point;
     this.children = children;
     this.visited = false;
     this.levelMax = levelMax;
+    this.cache = cache;
   }
 
   addPoint(point) {
     if (this.level > this.levelMax) return;
-    this.children.push(new Tree(this.level + 1, point, [], this.levelMax));
+    // const cachedNode = this.cache.get(point.toString());
+    // if (cachedNode)
+    const node = new Tree(this.level + 1, point, this.findPoint(point)?.children ?? [], this.levelMax, this.cache);
+    this.cache.set(point.toString(), node);
+    this.children.push(node);
+  }
+
+  /**
+   * @param {Point} point
+   */
+  findPoint(point) {
+    return this.cache.get(point.toString());
+    // for (const node of this.getAllNodes()) {
+    //   if (node.point[0] === x && node.point[1] === y) return node;
+    // }
   }
 
   /**
@@ -113,6 +129,8 @@ function mainA(file, level) {
 
   while (node) {
     node.visited = true;
+    // @ts-ignore
+    console.log("ok");
     getNeighbors(grid, node.point).forEach((p) => node.addPoint(p));
     node = tree.getFirstUnvisited();
   }

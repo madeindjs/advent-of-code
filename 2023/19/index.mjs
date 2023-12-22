@@ -198,41 +198,22 @@ function filterTarget(xmas, actions, goal) {
 function mainB(file) {
   const [instructions] = parseFile(file);
 
-  const endings = Array.from(instructions.values()).filter(
-    (i) => i.defaultDest === "A" || i.actions.some((a) => a.destination === "A")
-  );
+  const stack = [{ point: "in", xmas: buildXmas() }];
 
-  // const combinaisons = endings.map((e) => filterCombinaisons(instructions, e.name));
-  /** @type {Xmas[]} */
-  let temp = [];
+  const results = [];
 
-  for (const poss of endings) {
-    const xmas = buildXmas();
-    if (poss.defaultDest === "A") {
-      filterDefaultDest(xmas, poss.actions);
-    } else {
-      filterTarget(xmas, poss.actions, "A");
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current) throw `can't happens`;
+
+    const ins = instructions.get(current.point);
+    if (ins === undefined) throw `Cannot find instruction for ${current}`;
+
+    let isDefault = true;
+    for (const { destination, operator, target, value } of ins.actions) {
+      operator === "<" ? ratings[value] < target : ratings[value] > target;
     }
-    temp.push(filterCombinaisons(instructions, poss.name, xmas));
   }
-
-  const x = new Set();
-  const m = new Set();
-  const a = new Set();
-  const s = new Set();
-
-  let total = 0;
-
-  for (const xmas of temp) {
-    total += xmas.x.length * xmas.m.length * xmas.a.length * xmas.s.length;
-    xmas.x.forEach((v) => x.add(v));
-    xmas.m.forEach((v) => m.add(v));
-    xmas.a.forEach((v) => a.add(v));
-    xmas.s.forEach((v) => s.add(v));
-  }
-  console.log(x.size, m.size, a.size, s.size);
-  // return x.size * m.size * a.size * s.size;
-  return total;
 }
 
 strictEqual(mainB("./spec2.txt"), 1);
