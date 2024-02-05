@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 
 /**
  * @param {Array} a
@@ -7,7 +8,12 @@ import { readFileSync } from "node:fs";
  */
 function isArrayDeepEqual(a, b) {
   if (a.length !== b.length) return false;
-  return a.join("-") === b.join("-");
+
+  for (let index = 0; index < a.length; index++) {
+    if (a[index] !== b[index]) return false;
+  }
+
+  return true;
 }
 
 /**
@@ -20,73 +26,78 @@ function setCharAt(str, index, chr) {
   return str.substring(0, index) + chr + str.substring(index + 1);
 }
 
-function getCurrentCount(sol) {
-  return sol
-    .split(".")
-    .filter(Boolean)
-    .map((l) => l.length);
-}
-
 /**
- * @param {string[]} combs
+ * @param {string} sol
  * @param {number[]} counts
  */
-function filterCombinaisons(combs, counts) {
-  return combs.filter((line) => isArrayDeepEqual(getCurrentCount(line), counts));
-}
-
 function isPossible(sol, counts) {
-  const c = getCurrentCount(sol.split("?")[0]);
-  c.pop();
-  return isArrayDeepEqual(c, counts.slice(0, c.length));
-}
+  let currentCount = 0;
+  let previous = undefined;
 
-const getPossibleLinesCache = new Map();
+  const groups = [];
+
+  for (const char of sol) {
+    if (char === ".") {
+      if (previous === "#") {
+        if (counts[groups.length] !== currentCount) return false;
+        groups.push(currentCount);
+      }
+
+      currentCount = 0;
+    } else if (char === "#") {
+      currentCount++;
+    } else {
+      return groups.length <= counts.length;
+    }
+    previous = char;
+  }
+
+  if (currentCount) {
+    groups.push(currentCount);
+  }
+
+  return isArrayDeepEqual(groups, counts);
+}
+// assert.ok(isPossible("##.?.##", [2, 2]));
+// assert.ok(isPossible("##?.??", [3, 0]));
+// assert.ok(isPossible("##??.#", [4, 1]));
+// assert.ok(isPossible("#.?.###", [1, 1, 3]));
+// assert.strictEqual(isPossible("####.##.?.#", [4, 1]), false);
+// assert.strictEqual(isPossible("####.##", [4, 1]), false);
+// assert.ok(isPossible("####.##", [4, 2]));
+// assert.strictEqual(isPossible(".#....#...###.", [1, 1, 3]), true);
+// assert.strictEqual(isPossible(".#....#...##", [1, 1, 3]), false);
+// assert.strictEqual(isPossible(".#....#...", [1, 1, 3]), false);
+// assert.strictEqual(isPossible(".#....#...###", [1, 1, 3]), true);
 
 /**
  * @param {string} line
  * @param {number[]} counts
  */
-function getPossibleLines(line, counts, check = true) {
-  if (!line.includes("?")) return [line];
-
-  const cache = getPossibleLinesCache.get(line);
-
-  if (cache) {
-    return check ? filterCombinaisons(cache, counts) : cache;
-  }
-
+function* getPossibleLines(line, counts) {
   const stack = [line];
-  /** @type {string[]} */
-  const results = [];
 
   while (stack.length > 0) {
     const current = stack.pop();
     if (current === undefined) throw Error();
 
+    // console.log(stack.length);
+
     const index = current.indexOf("?");
     if (index === -1) {
-      results.push(current);
+      if (isPossible(current, counts)) yield current;
     } else {
       const sol1 = setCharAt(current, index, "#");
       const sol2 = setCharAt(current, index, ".");
 
-      if (check) {
-        if (isPossible(sol1, counts)) stack.push(sol1);
-        if (isPossible(sol2, counts)) stack.push(sol2);
-      } else {
-        stack.push(sol1, sol2);
-      }
+      if (isPossible(sol1, counts)) stack.push(sol1);
+      if (isPossible(sol2, counts)) stack.push(sol2);
     }
   }
-
-  return check ? filterCombinaisons(results, counts) : results;
 }
-// {
-//   const [line, count] =
-// }
-// assert.strictEqual(count(getCombinaisons(...parseLine("#.#.### 1,1,3"))), 1);
-// assert.strictEqual(count(getCombinaisons(...parseLine(".??..??...?##. 1,1,3"))), 4);
+// assert.strictEqual(count(getPossibleLines(...parseLine("#.#.### 1,1,3"))), 1);
+// assert.strictEqual(count(getPossibleLines(...parseLine("#.?.### 1,1,3"))), 1);
+assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 /**
  * @param {string} lineStr
@@ -106,54 +117,48 @@ function count(gen) {
 assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 function parseFile(file) {
-  return readFileSync(file, { encoding: "utf-8" }).split("\n").filter(Boolean).map(parseLine);
+  return readFileSync(new URL(file, import.meta.url), { encoding: "utf-8" })
+    .split("\n")
+    .filter(Boolean)
+    .map(parseLine);
 }
 
-function mainA(file) {
+/**
+ * @param {string} file
+ * @param {(line: string, counts: number[]) => Generator<string>} getPossibilities
+ */
+function mainA(file, getPossibilities = getPossibleLines) {
   let total = 0;
-  for (const [line, counts] of parseFile(file)) {
-    const cmbs = getPossibleLines(line, counts);
-    total += cmbs.length;
+  const lines = parseFile(file);
+  let i = 0;
+  for (const [line, counts] of lines) {
+    console.log(`${i}/${lines.length}`);
+    for (const _ of getPossibilities(line, counts)) total++;
+    i++;
   }
   return total;
 }
 
 /**
- * @template T
- * @param {T[]} lines
- * @returns {Generator<string, void, unknown>}
+ * @param {string} line
+ * @param {number[]} counts
  */
-function* getAllCombinaisons(lines) {
-  for (let a = 0; a < lines.length; a++) {
-    for (let b = 0; b < lines.length; b++) {
-      for (let c = 0; c < lines.length; c++) {
-        for (let d = 0; d < lines.length; d++) {
-          for (let e = 0; e < lines.length; e++) {
-            yield `${lines[a]}${lines[b]}${lines[c]}${lines[d]}${lines[e]}`;
-          }
-        }
-      }
-    }
-  }
-}
+function getPossibleLinesWithFold(line, counts) {
+  const arr5 = new Array(5).fill("");
+  line = arr5.map(() => line).join("?");
+  counts = arr5.flatMap(() => counts);
 
-// assert.deepEqual(Array.from(getAllCombinaisons([1, 2, 3])), [1, 1, 1], [1, 2, 1]);
+  return getPossibleLines(line, counts);
+}
+assert.strictEqual(count(getPossibleLinesWithFold(...parseLine("???.### 1,1,3"))), 1);
+assert.strictEqual(count(getPossibleLinesWithFold(...parseLine(".??..??...?##. 1,1,3"))), 16384);
+assert.strictEqual(count(getPossibleLinesWithFold(...parseLine("??#??#???????? 1,5,1"))), 16384);
 
 function mainB(file) {
-  let total = 0;
-  for (const [line, counts] of parseFile(file)) {
-    const combinaison = getPossibleLines(line, counts, false);
-    const count5 = new Array(5).fill(count).flatMap((r) => r);
-
-    for (const line of getAllCombinaisons(combinaison)) {
-      // const element = array[a];
-      if (isArrayDeepEqual(getCurrentCount(line), count5)) total++;
-    }
-    // total += cmbs.length;
-    console.log(".");
-  }
-  return total;
+  return mainA(file, getPossibleLinesWithFold);
 }
 
-assert.strictEqual(mainA("input.txt"), 7025);
-console.log(mainB("input.txt"));
+// assert.strictEqual(mainA("spec.txt"), 21);
+// assert.strictEqual(mainA("input.txt"), 7025);
+// assert.strictEqual(mainB("spec.txt"), 525152);
+// assert.strictEqual(mainB("input.txt"), 7025);
