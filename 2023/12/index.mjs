@@ -2,102 +2,102 @@ import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { URL } from "node:url";
 
-/**
- * @param {Array} a
- * @param {Array} b
- */
-function isArrayDeepEqual(a, b) {
-  if (a.length !== b.length) return false;
-
-  for (let index = 0; index < a.length; index++) {
-    if (a[index] !== b[index]) return false;
-  }
-
-  return true;
-}
-
-/**
- * @param {string} str
- * @param {number} index
- * @param {string} chr
- */
-function setCharAt(str, index, chr) {
-  if (index > str.length - 1) return str;
-  return str.substring(0, index) + chr + str.substring(index + 1);
-}
-
-/**
- * @param {string} sol
- * @param {number[]} counts
- */
-function isPossible(sol, counts) {
-  let currentCount = 0;
-  let previous = undefined;
-
-  const groups = [];
-
-  for (const char of sol) {
-    if (char === ".") {
-      if (previous === "#") {
-        if (counts[groups.length] !== currentCount) return false;
-        groups.push(currentCount);
-      }
-
-      currentCount = 0;
-    } else if (char === "#") {
-      currentCount++;
-    } else {
-      return groups.length <= counts.length;
-    }
-    previous = char;
-  }
-
-  if (currentCount) {
-    groups.push(currentCount);
-  }
-
-  return isArrayDeepEqual(groups, counts);
-}
-// assert.ok(isPossible("##.?.##", [2, 2]));
-// assert.ok(isPossible("##?.??", [3, 0]));
-// assert.ok(isPossible("##??.#", [4, 1]));
-// assert.ok(isPossible("#.?.###", [1, 1, 3]));
-// assert.strictEqual(isPossible("####.##.?.#", [4, 1]), false);
-// assert.strictEqual(isPossible("####.##", [4, 1]), false);
-// assert.ok(isPossible("####.##", [4, 2]));
-// assert.strictEqual(isPossible(".#....#...###.", [1, 1, 3]), true);
-// assert.strictEqual(isPossible(".#....#...##", [1, 1, 3]), false);
-// assert.strictEqual(isPossible(".#....#...", [1, 1, 3]), false);
-// assert.strictEqual(isPossible(".#....#...###", [1, 1, 3]), true);
+/** @type {Map<string, number>} */
+const cache = new Map();
 
 /**
  * @param {string} line
  * @param {number[]} counts
+ * @returns {Set<string>}
  */
-function* getPossibleLines(line, counts) {
-  const stack = [line];
+function getPossibleLines(line, counts, before = "", set = new Set()) {
+  const wholeLine = `${before}${line}`;
+  // console.log(`${before}|${line}`, counts);
+  if (counts.length === 0 && !line.includes("?")) {
+    if (!line.includes("#")) {
+      set.add(wholeLine);
+    }
+    return set;
+  }
+  if (line.length === 0) {
+    if (counts.length === 0) {
+      set.add(wholeLine);
+    }
+    return set;
+    // return counts.length === 0 ? 1 : 0;
+  }
 
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (current === undefined) throw Error();
+  // let linesCount = 0;
+  let currentCount = 0;
 
-    // console.log(stack.length);
+  // const key = [line, counts].join("-");
 
-    const index = current.indexOf("?");
-    if (index === -1) {
-      if (isPossible(current, counts)) yield current;
+  // loop char by char
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+
+    if (char === "#") {
+      currentCount++;
+    } else if (char === ".") {
+      //  if didn't encounter
+      if (!currentCount) continue;
+
+      if (currentCount === counts[0]) {
+        counts = counts.slice(1);
+        currentCount = 0;
+      } else {
+        return set;
+      }
+    } else if (char === "?") {
+      const next = line.slice(index + 1);
+
+      // add next possibility for hash
+      const hashes = "#".repeat(currentCount);
+      getPossibleLines(`${hashes}#${next}`, counts, `${before}${line.slice(0, index - hashes.length)}`, set);
+
+      // add next possibility for point
+      if (currentCount) {
+        if (currentCount === counts[0]) {
+          getPossibleLines(`.${next}`, counts.slice(1), `${before}${line.slice(0, index)}`, set);
+        } else {
+          return set;
+        }
+      } else {
+        getPossibleLines(`.${next}`, counts, `${before}${line.slice(0, index)}`, set);
+      }
+
+      return set;
     } else {
-      const sol1 = setCharAt(current, index, "#");
-      const sol2 = setCharAt(current, index, ".");
-
-      if (isPossible(sol1, counts)) stack.push(sol1);
-      if (isPossible(sol2, counts)) stack.push(sol2);
+      throw Error();
     }
   }
+
+  if (currentCount) {
+    if (currentCount === counts[0]) {
+      counts = counts.slice(1);
+      currentCount = 0;
+    } else {
+      return set;
+    }
+  }
+
+  if (counts.length === 0) {
+    set.add(wholeLine);
+  }
+
+  return set;
 }
-// assert.strictEqual(count(getPossibleLines(...parseLine("#.#.### 1,1,3"))), 1);
-// assert.strictEqual(count(getPossibleLines(...parseLine("#.?.### 1,1,3"))), 1);
-assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
+assert.strictEqual(getPossibleLines(...parseLine("#.#.### 1,1,3")).size, 1);
+assert.strictEqual(getPossibleLines(...parseLine("#.?.### 1,1,3")).size, 1);
+assert.strictEqual(getPossibleLines(...parseLine("#.?.?### 1,1,4")).size, 1);
+assert.strictEqual(getPossibleLines(...parseLine("#.??? 1,3")).size, 1);
+assert.strictEqual(getPossibleLines(...parseLine("?? 1")).size, 2);
+assert.strictEqual(getPossibleLines(...parseLine("??.?##. 1,3")).size, 2);
+assert.strictEqual(getPossibleLines(...parseLine(".??..??...?##. 1,1,3")).size, 4);
+assert.strictEqual(getPossibleLines(...parseLine("??? 2")).size, 2);
+assert.strictEqual(getPossibleLines(...parseLine(".??? 2")).size, 2);
+assert.strictEqual(getPossibleLines(...parseLine("???. 2")).size, 2);
+assert.strictEqual(getPossibleLines(...parseLine(".??#?.???.# 3,1")).size, 2);
 
 /**
  * @param {string} lineStr
@@ -108,13 +108,13 @@ function parseLine(lineStr) {
   return [line, countStr.split(",").map(Number)];
 }
 
-function count(gen) {
-  let total = 0;
-  for (const _ of gen) total++;
-  return total;
-}
+// function count(gen) {
+//   let total = 0;
+//   for (const _ of gen) total++;
+//   return total;
+// }
 
-assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
+// assert.strictEqual(count(getPossibleLines(...parseLine(".??..??...?##. 1,1,3"))), 4);
 
 function parseFile(file) {
   return readFileSync(new URL(file, import.meta.url), { encoding: "utf-8" })
@@ -125,16 +125,17 @@ function parseFile(file) {
 
 /**
  * @param {string} file
- * @param {(line: string, counts: number[]) => Generator<string>} getPossibilities
+ * @param {(line: string, counts: number[]) => Set<string>} getPossibilities
  */
 function mainA(file, getPossibilities = getPossibleLines) {
   let total = 0;
   const lines = parseFile(file);
   let i = 0;
   for (const [line, counts] of lines) {
-    console.log(`${i}/${lines.length}`);
-    for (const _ of getPossibilities(line, counts)) total++;
+    const res = getPossibilities(line, counts);
+    // console.log(i, res);
     i++;
+    total += res.size;
   }
   return total;
 }
@@ -145,20 +146,20 @@ function mainA(file, getPossibilities = getPossibleLines) {
  */
 function getPossibleLinesWithFold(line, counts) {
   const arr5 = new Array(5).fill("");
-  line = arr5.map(() => line).join("?");
-  counts = arr5.flatMap(() => counts);
-
-  return getPossibleLines(line, counts);
+  return getPossibleLines(
+    arr5.map(() => line).join("?"),
+    arr5.flatMap(() => counts)
+  );
 }
-assert.strictEqual(count(getPossibleLinesWithFold(...parseLine("???.### 1,1,3"))), 1);
-assert.strictEqual(count(getPossibleLinesWithFold(...parseLine(".??..??...?##. 1,1,3"))), 16384);
-assert.strictEqual(count(getPossibleLinesWithFold(...parseLine("??#??#???????? 1,5,1"))), 16384);
+// assert.strictEqual(getPossibleLinesWithFold(...parseLine("???.### 1,1,3")), 1);
+// assert.strictEqual(getPossibleLinesWithFold(...parseLine(".??..??...?##. 1,1,3")), 16384);
+// assert.strictEqual(getPossibleLinesWithFold(...parseLine("??#??#???????? 1,5,1")), 16384);
 
 function mainB(file) {
   return mainA(file, getPossibleLinesWithFold);
 }
 
-// assert.strictEqual(mainA("spec.txt"), 21);
-// assert.strictEqual(mainA("input.txt"), 7025);
+assert.strictEqual(mainA("spec.txt"), 21);
+assert.strictEqual(mainA("input.txt"), 7025);
 // assert.strictEqual(mainB("spec.txt"), 525152);
 // assert.strictEqual(mainB("input.txt"), 7025);
