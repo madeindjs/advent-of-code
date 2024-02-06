@@ -10,18 +10,13 @@ const cache = new Map();
  * @param {number[]} counts
  * @returns {number}
  */
-function getPossibleLines(line, counts, before = "") {
+function getPossibleLines(line, counts) {
   const key = [line, counts].join("-");
-
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
 
-  if (counts.length === 0 && !line.includes("?")) {
-    return line.includes("#") ? 0 : 1;
-  }
-  if (line.length === 0) {
-    return counts.length === 0 ? 1 : 0;
-  }
+  if (counts.length === 0 && !line.includes("?")) return line.includes("#") ? 0 : 1;
+  if (line.length === 0) return counts.length === 0 ? 1 : 0;
 
   let linesCount = 0;
   let currentCount = 0;
@@ -47,18 +42,18 @@ function getPossibleLines(line, counts, before = "") {
 
       // add next possibility for hash
       const hashes = "#".repeat(currentCount);
-      linesCount += getPossibleLines(`${hashes}#${next}`, counts, `${before}${line.slice(0, index - hashes.length)}`);
+      linesCount += getPossibleLines(`${hashes}#${next}`, counts);
 
       // add next possibility for point
       if (currentCount) {
         if (currentCount === counts[0]) {
-          linesCount += getPossibleLines(`.${next}`, counts.slice(1), `${before}${line.slice(0, index)}`);
+          linesCount += getPossibleLines(next, counts.slice(1));
         } else {
           cache.set(key, linesCount);
-          return linesCount; // 0 ?
+          return linesCount;
         }
       } else {
-        linesCount += getPossibleLines(`.${next}`, counts, `${before}${line.slice(0, index)}`);
+        linesCount += getPossibleLines(next, counts);
       }
 
       cache.set(key, linesCount);
@@ -138,9 +133,7 @@ assert.strictEqual(getPossibleLinesWithFold(...parseLine("????.#...#... 4,1,1"))
 assert.strictEqual(getPossibleLinesWithFold(...parseLine("????.######..#####. 1,6,5")), 2500);
 assert.strictEqual(getPossibleLinesWithFold(...parseLine("?###???????? 3,2,1")), 506250);
 
-function mainB(file) {
-  return mainA(file, getPossibleLinesWithFold);
-}
+const mainB = (file) => mainA(file, getPossibleLinesWithFold);
 
 assert.strictEqual(mainA("spec.txt"), 21);
 assert.strictEqual(mainA("input.txt"), 7025);
