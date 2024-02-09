@@ -1,16 +1,14 @@
-import assert from "node:assert";
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { URL } from "node:url";
-
-/** @type {Map<string, number>} */
-const cache = new Map();
 
 /**
  * @param {string} line
  * @param {number[]} counts
+ * @param {Map<string, number>} cache
  * @returns {number}
  */
-function getPossibleLines(line, counts) {
+function getPossibleLines(line, counts, cache = new Map()) {
   const key = [line, counts].join("-");
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
@@ -42,18 +40,18 @@ function getPossibleLines(line, counts) {
 
       // add next possibility for hash
       const hashes = "#".repeat(currentCount);
-      linesCount += getPossibleLines(`${hashes}#${next}`, counts);
+      linesCount += getPossibleLines(`${hashes}#${next}`, counts, cache);
 
       // add next possibility for point
       if (currentCount) {
         if (currentCount === counts[0]) {
-          linesCount += getPossibleLines(next, counts.slice(1));
+          linesCount += getPossibleLines(next, counts.slice(1), cache);
         } else {
           cache.set(key, linesCount);
           return linesCount;
         }
       } else {
-        linesCount += getPossibleLines(next, counts);
+        linesCount += getPossibleLines(next, counts, cache);
       }
 
       cache.set(key, linesCount);
@@ -76,7 +74,6 @@ function getPossibleLines(line, counts) {
   if (counts.length === 0) linesCount++;
 
   cache.set(key, linesCount);
-
   return linesCount;
 }
 assert.strictEqual(getPossibleLines(...parseLine("#.#.### 1,1,3")), 1);
@@ -127,6 +124,7 @@ function getPossibleLinesWithFold(line, counts) {
     arr5.flatMap(() => counts)
   );
 }
+
 assert.strictEqual(getPossibleLinesWithFold(...parseLine("???.### 1,1,3")), 1);
 assert.strictEqual(getPossibleLinesWithFold(...parseLine(".??..??...?##. 1,1,3")), 16384);
 assert.strictEqual(getPossibleLinesWithFold(...parseLine("????.#...#... 4,1,1")), 16);
