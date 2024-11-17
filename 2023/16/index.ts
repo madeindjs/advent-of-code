@@ -1,25 +1,21 @@
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 
-/**
- * @typedef {string[][]} Grid
- * @typedef {[number, number]} Point
- * @typedef {'N' | 'S' | 'E' | 'W'} Direction
- * @typedef {{point: Point, direction: Direction}} Beam
- * @returns {Grid}
- */
-function parseFile(file) {
+type Grid = string[][];
+
+type Point = [number, number];
+
+type Direction = "N" | "S" | "E" | "W";
+
+type Beam = { point: Point; direction: Direction };
+
+function parseFile(file: string): Grid {
   return readFileSync(file, { encoding: "utf-8" })
     .split("\n")
     .map((r) => r.split(""));
 }
 
-/**
- * @param {Point} param0
- * @param {Direction} direction
- * @returns {Point}
- */
-function getNextPoint([x, y], direction) {
+function getNextPoint([x, y]: Point, direction: Direction): Point {
   if (direction === "N") return [x - 1, y];
   if (direction === "S") return [x + 1, y];
   if (direction === "E") return [x, y + 1];
@@ -35,23 +31,21 @@ const BEAM_DIRECTION_MAPPING = {
   "|": { W: ["N", "S"], E: ["N", "S"], N: ["N"], S: ["S"] },
 };
 
-/** @param {Beam} beam */
-const serializeBeam = (beam) => `${beam.point.toString()},${beam.direction}`;
+const serializeBeam = (beam: Beam) =>
+  `${beam.point.toString()},${beam.direction}`;
 
-/**
- * @param {Grid} grid
- * @param {Beam} start
- * @returns {Generator<Point, void, unknown>}
- */
-function* getTraversedPoints(grid, start) {
+function* getTraversedPoints(
+  grid: Grid,
+  start: Beam,
+): Generator<Point, void, unknown> {
   /** @type {Beam[]} */
-  let beams = [start];
+  let beams: Beam[] = [start];
   const existinsBeams = new Set(serializeBeam(start));
 
   while (beams.length > 0) {
     /** @type {Beam[]} */
-    let newBeams = [];
-    const addBeam = (b) => {
+    let newBeams: Beam[] = [];
+    const addBeam = (b: Beam) => {
       const str = serializeBeam(b);
       if (existinsBeams.has(str)) return;
       existinsBeams.add(str);
@@ -60,12 +54,14 @@ function* getTraversedPoints(grid, start) {
 
     for (const beam of beams) {
       const [x, y] = getNextPoint(beam.point, beam.direction);
-      const isInside = x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
+      const isInside =
+        x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
       if (!isInside) continue;
       yield [x, y];
 
       const value = grid[x][y];
-      for (const direction of BEAM_DIRECTION_MAPPING[value][beam.direction] ?? []) {
+      for (const direction of BEAM_DIRECTION_MAPPING[value][beam.direction] ??
+        []) {
         addBeam({ point: [x, y], direction: direction });
       }
     }
@@ -73,21 +69,18 @@ function* getTraversedPoints(grid, start) {
   }
 }
 
-/**
- * @param {Grid} grid
- * @param {Beam} start
- */
-function computePoints(grid, start = { point: [0, -1], direction: "E" }) {
-  return new Set(Array.from(getTraversedPoints(grid, start)).map((b) => b.toString())).size;
+function computePoints(
+  grid: Grid,
+  start: Beam = { point: [0, -1], direction: "E" },
+) {
+  return new Set(
+    Array.from(getTraversedPoints(grid, start)).map((b) => b.toString()),
+  ).size;
 }
 
-const mainA = (file) => computePoints(parseFile(file));
+const mainA = (file: string) => computePoints(parseFile(file));
 
-/**
- * @param {Grid} grid
- * @returns {Generator<Beam, void, unknown>}
- */
-function* getStartingPoints(grid) {
+function* getStartingPoints(grid: Grid): Generator<Beam, void, unknown> {
   const xMax = grid.length - 1;
   const yMax = grid[0].length - 1;
 
@@ -101,10 +94,11 @@ function* getStartingPoints(grid) {
   }
 }
 
-function mainB(file) {
+function mainB(file: string) {
   const grid = parseFile(file);
   let max = 0;
-  for (const start of getStartingPoints(grid)) max = Math.max(max, computePoints(grid, start));
+  for (const start of getStartingPoints(grid))
+    max = Math.max(max, computePoints(grid, start));
   return max;
 }
 
