@@ -2,12 +2,9 @@ import { createReadStream } from "fs";
 import assert from "node:assert";
 import readline from "readline";
 
-/**
- * @typedef {{sets: [number, string][][], id: number} } Game
- * @param {string} line (ex: `Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green`)
- * @returns {Game}
- */
-function parseGameLine(line) {
+type Game = { sets: [number, string][][]; id: number };
+
+function parseGameLine(line: string): Game {
   const [idStr, setsStr] = line.split(": ");
   const id = Number(idStr.replace("Game ", ""));
 
@@ -16,45 +13,49 @@ function parseGameLine(line) {
       set.split(", ").map((c) => {
         const [qty, color] = c.split(" ");
         return [Number(qty), color];
-      })
+      }),
     ) ?? [];
 
   // @ts-ignore
   return { id, sets };
 }
 
-assert.deepEqual(parseGameLine("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").id, 1);
-assert.deepEqual(parseGameLine("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").sets, [
+assert.deepEqual(
+  parseGameLine("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").id,
+  1,
+);
+assert.deepEqual(
+  parseGameLine("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").sets,
   [
-    [3, "blue"],
-    [4, "red"],
+    [
+      [3, "blue"],
+      [4, "red"],
+    ],
+    [
+      [1, "red"],
+      [2, "green"],
+      [6, "blue"],
+    ],
+    [[2, "green"]],
   ],
-  [
-    [1, "red"],
-    [2, "green"],
-    [6, "blue"],
-  ],
-  [[2, "green"]],
-]);
+);
 
-/**
- * @param {string} file
- * @param {(line: string) => number} computeFn
- */
-async function computeEachLine(file, computeFn) {
+async function computeEachLine(
+  file: string,
+  computeFn: (line: string) => number,
+) {
   let total = 0;
 
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  for await (const line of readline.createInterface({
+    input: createReadStream(file),
+  })) {
     total += computeFn(line);
   }
 
   return total;
 }
 
-/**
- * @param {Game} game
- */
-function isGamePossible(game) {
+function isGamePossible(game: Game) {
   return !game.sets.some((set) =>
     set.some(([qty, color]) => {
       switch (color) {
@@ -67,17 +68,17 @@ function isGamePossible(game) {
         default:
           return false;
       }
-    })
+    }),
   );
 }
 
-function mainACompute(line) {
+function mainACompute(line: string) {
   const game = parseGameLine(line);
   return isGamePossible(game) ? game.id : 0;
 }
-const mainA = (file) => computeEachLine(file, mainACompute);
+const mainA = (file: string) => computeEachLine(file, mainACompute);
 
-function mainBCompute(line) {
+function mainBCompute(line: string) {
   const game = parseGameLine(line);
 
   const max = { red: 0, blue: 0, green: 0 };
@@ -90,7 +91,7 @@ function mainBCompute(line) {
 
   return Object.values(max).reduce((acc, v) => acc * v, 1);
 }
-const mainB = (file) => computeEachLine(file, mainBCompute);
+const mainB = (file: string) => computeEachLine(file, mainBCompute);
 
 const testA = await mainA("./spec.txt");
 assert.strictEqual(testA, 8);

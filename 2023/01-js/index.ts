@@ -2,10 +2,7 @@ import { createReadStream } from "fs";
 import assert from "node:assert";
 import readline from "readline";
 
-/**
- * @param {number[]} numbers
- */
-function constructFinalNumber(numbers) {
+function constructFinalNumber(numbers: number[]) {
   if (numbers.length === 1) return Number(numbers[0].toString().repeat(2));
 
   const first = numbers.shift();
@@ -14,11 +11,8 @@ function constructFinalNumber(numbers) {
   return Number(`${first}${last}`);
 }
 
-/**
- * @param {string} line
- */
-function extractFirstAndLastNumer(line) {
-  const numbers = [];
+function extractFirstAndLastNumer(line: string) {
+  const numbers: number[] = [];
 
   for (const char of line) {
     const n = Number(char);
@@ -30,12 +24,19 @@ function extractFirstAndLastNumer(line) {
 assert.strictEqual(extractFirstAndLastNumer("1abc2"), 12);
 assert.strictEqual(extractFirstAndLastNumer("a1b2c3d4e5f"), 15);
 
-/**
- * @param {string} line
- */
-function extractFirstAndLastNumerWithWords(line) {
-  const words = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-  const numbers = [];
+function extractFirstAndLastNumerWithWords(line: string) {
+  const words = [
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+  ];
+  const numbers: number[] = [];
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
@@ -64,22 +65,25 @@ function extractFirstAndLastNumerWithWords(line) {
 assert.strictEqual(extractFirstAndLastNumerWithWords("two1nine"), 29);
 assert.strictEqual(extractFirstAndLastNumerWithWords("eightwothree"), 83);
 
-/**
- * @param {string} file
- * @param {(line: string) => number} computeFn
- */
-async function eachLinesAndCompute(file, computeFn) {
+async function eachLinesAndCompute(
+  file: string,
+  computeFn: (line: string) => number,
+) {
   let total = 0;
 
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  for await (const line of readline.createInterface({
+    input: createReadStream(file),
+  })) {
     total += computeFn(line);
   }
 
   return total;
 }
 
-const mainA = (file) => eachLinesAndCompute(file, extractFirstAndLastNumer);
-const mainB = (file) => eachLinesAndCompute(file, extractFirstAndLastNumerWithWords);
+const mainA = (file: string) =>
+  eachLinesAndCompute(file, extractFirstAndLastNumer);
+const mainB = (file: string) =>
+  eachLinesAndCompute(file, extractFirstAndLastNumerWithWords);
 
 async function main() {
   const testA = await mainA("./spec.txt");

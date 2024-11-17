@@ -2,52 +2,56 @@ import { createReadStream } from "fs";
 import assert from "node:assert";
 import readline from "readline";
 
-/**
- * @typedef {{ nbPlayer: number[]; nbWin: number[]; id: number; }} Card
- * @param {string} line
- * @returns {Card}
- */
-function parseCard(line) {
+type Card = { nbPlayer: number[]; nbWin: number[]; id: number };
+
+function parseCard(line: string): Card {
   const [title, numbers] = line.split(": ");
 
-  const extractNumbers = (str) => Array.from(str.matchAll(/ ?([0-9]+)/g)).map((match) => Number(match[1]));
+  const extractNumbers = (str) =>
+    Array.from(str.matchAll(/ ?([0-9]+)/g)).map((match) => Number(match[1]));
   const [nbPlayer, nbWin] = numbers.split(" | ").map(extractNumbers);
 
-  return { nbPlayer, nbWin: nbWin, id: Number(title.match(/[0-9]+/)?.[0] ?? -1) };
+  return {
+    nbPlayer,
+    nbWin: nbWin,
+    id: Number(title.match(/[0-9]+/)?.[0] ?? -1),
+  };
 }
 
-/**
- * @param {Card} card
- */
-function computeCardMatches(card) {
+function computeCardMatches(card: Card) {
   return card.nbPlayer.filter((n) => card.nbWin.includes(n));
 }
 
-/**
- * @param {string} file
- * @param {(line: string) => number} computeFn
- */
-async function computeEachLine(file, computeFn) {
+async function computeEachLine(
+  file: string,
+  computeFn: (line: string) => number,
+) {
   let total = 0;
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  for await (const line of readline.createInterface({
+    input: createReadStream(file),
+  })) {
     total += computeFn(line);
   }
   return total;
 }
 
-function mainACompute(line) {
+function mainACompute(line: string) {
   const card = parseCard(line);
   return computeCardMatches(card).reduce((acc) => (acc === 0 ? 1 : acc * 2), 0);
 }
-assert.strictEqual(mainACompute("Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53"), 8);
+assert.strictEqual(
+  mainACompute("Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53"),
+  8,
+);
 
-const mainA = (file) => computeEachLine(file, mainACompute);
+const mainA = (file: string) => computeEachLine(file, mainACompute);
 
-async function mainB(file) {
-  /** @type {Record<number, number>} */
-  const counts = {};
+async function mainB(file: string) {
+  const counts: Record<number, number> = {};
 
-  for await (const line of readline.createInterface({ input: createReadStream(file) })) {
+  for await (const line of readline.createInterface({
+    input: createReadStream(file),
+  })) {
     const card = parseCard(line);
     counts[card.id] ??= 1;
     const qty = counts[card.id];
@@ -58,7 +62,7 @@ async function mainB(file) {
     });
   }
 
-  const sum = (numbers) => numbers.reduce((acc, v) => acc + v, 0);
+  const sum = (numbers: number[]) => numbers.reduce((acc, v) => acc + v, 0);
 
   return sum(Object.values(counts));
 }
