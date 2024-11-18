@@ -57,4 +57,32 @@ async function mainA(path: string) {
   }
   return total;
 }
-assert.strictEqual(await mainA("./input.txt"), 0);
+assert.strictEqual(await mainA("./input.txt"), 105);
+
+function* getAba(line: string) {
+  for (let i = 0; i < line.length - 2; i++) {
+    if (line[i] === line[i + 1]) continue;
+    if (line[i] === line[i + 2]) yield line[i] + line[i + 1] + line[i + 2];
+  }
+}
+
+function hasSSL(adress: Adress): boolean {
+  const abas = adress.outside
+    .flatMap((c) => Array.from(getAba(c)))
+    .map((c) => `${c[1]}${c[0]}${c[1]}`);
+
+  console.log(abas);
+
+  return adress.inside.some((i) => abas.some((aba) => i.includes(aba)));
+}
+assert.strictEqual(hasSSL(parse("aba[bab]xyz")), true);
+assert.strictEqual(hasSSL(parse("xyx[xyx]xyx")), false);
+
+async function mainB(path: string) {
+  let total = 0;
+  for await (const line of getLines(path)) {
+    if (hasSSL(parse(line))) total++;
+  }
+  return total;
+}
+assert.strictEqual(await mainB("./input.txt"), 258);
