@@ -7,7 +7,10 @@ function getLines(path: string) {
   return readline.createInterface({ input: createReadStream(file) });
 }
 
-async function countChars(path: string) {
+async function countChars(
+  path: string,
+  sort: (a: number, b: number) => number,
+) {
   const columns: Record<string, number>[] = [];
   for await (const line of getLines(path)) {
     for (let i = 0; i < line.length; i++) {
@@ -17,37 +20,26 @@ async function countChars(path: string) {
       columns[i][char]++;
     }
   }
-  return columns;
-}
-
-async function mainA(path: string) {
-  const columns = await countChars(path);
-
   return columns
     .map(
       (col) =>
         Object.entries(col)
-          .sort(([, a], [, b]) => b - a)
+          .sort(([, a], [, b]) => sort(a, b))
           .shift()![0],
     )
     .join("");
+}
+
+function mainA(path: string) {
+  return countChars(path, (a, b) => b - a);
 }
 
 assert.strictEqual(await mainA("./spec.txt"), "easter");
 assert.strictEqual(await mainA("./input.txt"), "liwvqppc");
 
-async function mainB(path: string) {
-  const columns = await countChars(path);
-
-  return columns
-    .map(
-      (col) =>
-        Object.entries(col)
-          .sort(([, a], [, b]) => a - b)
-          .shift()![0],
-    )
-    .join("");
+function mainB(path: string) {
+  return countChars(path, (a, b) => a - b);
 }
 
 assert.strictEqual(await mainB("./spec.txt"), "advent");
-assert.strictEqual(await mainB("./input.txt"), "");
+assert.strictEqual(await mainB("./input.txt"), "caqfbzlh");
