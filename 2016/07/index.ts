@@ -52,6 +52,7 @@ assert.strictEqual(hasTLS(parse("ioxxoj[asdfgh]zxcvbn")), true);
 
 async function mainA(path: string) {
   let total = 0;
+  getLines(path).map((v) => v);
   for await (const line of getLines(path)) {
     if (hasTLS(parse(line))) total++;
   }
@@ -61,8 +62,8 @@ assert.strictEqual(await mainA("./input.txt"), 105);
 
 function* getAba(line: string) {
   for (let i = 0; i < line.length - 2; i++) {
-    if (line[i] === line[i + 1]) continue;
-    if (line[i] === line[i + 2]) yield line[i] + line[i + 1] + line[i + 2];
+    if (line[i] !== line[i + 1] && line[i] === line[i + 2])
+      yield line.slice(i, i + 3);
   }
 }
 
@@ -70,8 +71,6 @@ function hasSSL(adress: Adress): boolean {
   const abas = adress.outside
     .flatMap((c) => Array.from(getAba(c)))
     .map((c) => `${c[1]}${c[0]}${c[1]}`);
-
-  console.log(abas);
 
   return adress.inside.some((i) => abas.some((aba) => i.includes(aba)));
 }
