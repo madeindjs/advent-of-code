@@ -80,3 +80,39 @@ async function mainA(path: string) {
 
 assert.strictEqual(await mainA("./spec.txt"), 1514);
 assert.strictEqual(await mainA("./input.txt"), 158835);
+
+// ---
+
+const alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+function rotateLetter(a: string, n: number) {
+  const index = alphabet.indexOf(a);
+  return alphabet.charAt((index + n) % 26);
+}
+assert.strictEqual(rotateLetter("q", 343), "v");
+assert.strictEqual(rotateLetter("z", 343), "e");
+
+function rotateString(string: string, n: number): string {
+  return string
+    .split("")
+    .map((v) => rotateLetter(v, n))
+    .join("");
+}
+
+function decrypt(entry: Entry): string {
+  return entry.names.map((n) => rotateString(n, entry.sectorId)).join(" ");
+}
+
+assert.strictEqual(
+  decrypt(parse("qzmt-zixmtkozy-ivhz-343[whate]")),
+  "very encrypted name",
+);
+
+async function mainB() {
+  for await (const line of getLines("./input.txt")) {
+    const entry = parse(line);
+    const text = decrypt(entry);
+    if (text === "northpole object storage") return entry.sectorId;
+  }
+}
+assert.strictEqual(await mainB(), 993);
