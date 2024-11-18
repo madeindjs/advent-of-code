@@ -36,30 +36,18 @@ assert.deepEqual(getMostCommonChars("aacc"), ["a", "c"]);
 assert.deepEqual(getMostCommonChars("abc"), ["a", "b", "c"]);
 
 function get5MostCommonChars(line: string): string[] {
-  const count = getCharCount(line);
-  const min = Object.values(count).sort((a, b) => b - a)[4];
+  const count = Object.entries(getCharCount(line)).sort(
+    ([ak, av], [bk, bv]) => {
+      const diff = bv - av;
+      if (diff !== 0) return diff;
+      return ak.charCodeAt(0) - bk.charCodeAt(0);
+    },
+  );
 
-  return Object.entries(count)
-    .filter(([k, v]) => v >= min)
-    .map(([k, v]) => k);
-  // const count = Object.entries(getCharCount(line)).sort((a, b) => b[1] - a[1]);
-  const countMax = Math.max(...Object.values(count));
-
-  const res: string[] = [];
-  for (let i = 0; i < 4; i++) {
-    const p = count.shift();
-    if (!p) return res;
-    res.push(p[0]);
-  }
-
-  return res;
-
-  return Object.entries(count)
-    .slice(0, 5)
-    .map(([k]) => k);
+  return count.slice(0, 5).map(([k]) => k);
 }
 assert.deepEqual(get5MostCommonChars("aaaabbbbccccddeefgh"), "abcde".split(""));
-assert.deepEqual(get5MostCommonChars("abcdefghi"), "abcdefghi".split(""));
+assert.deepEqual(get5MostCommonChars("abcdefghi"), "abcde".split(""));
 
 function parse(line: string): Entry {
   const [before, checksum] = line.slice(0, line.length - 1).split("[");
@@ -91,4 +79,4 @@ async function mainA(path: string) {
 }
 
 assert.strictEqual(await mainA("./spec.txt"), 1514);
-assert.strictEqual(await mainA("./input.txt"), 89619);
+assert.strictEqual(await mainA("./input.txt"), 158835);
