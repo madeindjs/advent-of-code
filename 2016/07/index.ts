@@ -52,7 +52,6 @@ assert.strictEqual(hasTLS(parse("ioxxoj[asdfgh]zxcvbn")), true);
 
 async function mainA(path: string) {
   let total = 0;
-  getLines(path).map((v) => v);
   for await (const line of getLines(path)) {
     if (hasTLS(parse(line))) total++;
   }
