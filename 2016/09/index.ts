@@ -2,7 +2,7 @@ import assert from "assert";
 import { createReadStream } from "node:fs";
 import readline from "node:readline";
 
-function expand(string: string, expandExpanded = false): number {
+function expand(string: string): number {
   let stack = string.split("");
   let isScanning = false;
   let count = 0;
@@ -18,21 +18,10 @@ function expand(string: string, expandExpanded = false): number {
 
       const [range, qty] = scan.split("x").map(Number);
 
-      // i = openIndex;
       isScanning = false;
       scan = "";
 
-      const repeated = stack.splice(0, range);
-
-      if (expandExpanded) {
-        for (let j = 0; j < qty; j++) {
-          stack.splice(0, 0, ...repeated);
-        }
-      } else {
-        count += qty * range;
-      }
-
-      // console.log(range, qty, repeated);
+      count += qty * range;
     } else if (isScanning) {
       scan += char;
     } else {
@@ -62,7 +51,6 @@ async function mainA() {
 }
 
 assert.strictEqual(await mainA(), 115118);
-// ---
 
 // ---
 
