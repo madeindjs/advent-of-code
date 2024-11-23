@@ -2,43 +2,51 @@ import assert from "assert";
 import { createReadStream } from "node:fs";
 import readline from "node:readline";
 
-function expand(string: string, pos = 0, expandExpanded = false) {
-  let openIndex = -1;
+function expand(string: string, expandExpanded = false): number {
+  let stack = string.split("");
+  let isScanning = false;
+  let count = 0;
+  let scan = "";
 
-  for (let i = pos; i < string.length; i++) {
-    const char = string.at(i);
+  while (stack.length > 0) {
+    const char = stack.shift();
 
     if (char === "(") {
-      openIndex = i;
+      isScanning = true;
     } else if (char === ")") {
-      if (openIndex === -1) continue;
+      if (!isScanning) continue;
 
-      const [range, qty] = string
-        .slice(openIndex + 1, i)
-        .split("x")
-        .map(Number);
-
-      const repeated = string.slice(i + 1, i + 1 + range).repeat(qty);
-
-      const before = string.slice(0, openIndex);
-      const after = string.slice(i + 1 + range);
-
-      string = `${before}${repeated}${after}`;
+      const [range, qty] = scan.split("x").map(Number);
 
       // i = openIndex;
-      openIndex = -1;
-      i = expandExpanded ? openIndex : `${before}${repeated}`.length - 1;
+      isScanning = false;
+      scan = "";
+
+      const repeated = stack.splice(0, range);
+
+      if (expandExpanded) {
+        for (let j = 0; j < qty; j++) {
+          stack.splice(0, 0, ...repeated);
+        }
+      } else {
+        count += qty * range;
+      }
 
       // console.log(range, qty, repeated);
+    } else if (isScanning) {
+      scan += char;
+    } else {
+      count++;
     }
   }
-  return string;
+
+  return count;
 }
 
-assert.strictEqual(expand("A(1x5)BC"), "ABBBBBC");
-assert.strictEqual(expand("(3x3)XYZ"), "XYZXYZXYZ");
-assert.strictEqual(expand("A(2x2)BCD(2x2)EFG"), "ABCBCDEFEFG");
-assert.strictEqual(expand("X(8x2)(3x3)ABCY"), "X(3x3)ABC(3x3)ABCY");
+assert.strictEqual(expand("A(1x5)BC"), "ABBBBBC".length);
+assert.strictEqual(expand("(3x3)XYZ"), "XYZXYZXYZ".length);
+assert.strictEqual(expand("A(2x2)BCD(2x2)EFG"), "ABCBCDEFEFG".length);
+assert.strictEqual(expand("X(8x2)(3x3)ABCY"), "X(3x3)ABC(3x3)ABCY".length);
 
 function getLines(path: string) {
   const file = new URL(path, import.meta.url);
@@ -48,7 +56,7 @@ function getLines(path: string) {
 async function mainA() {
   let total = 0;
   for await (const line of getLines("./input.txt")) {
-    total += expand(line).length;
+    total += expand(line);
   }
   return total;
 }
@@ -56,19 +64,16 @@ async function mainA() {
 assert.strictEqual(await mainA(), 115118);
 // ---
 assert.strictEqual(
-  expand("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN", 0, true)
-    .length,
+  expand("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN", true),
   445,
 );
-assert.strictEqual(
-  expand("(27x12)(20x12)(13x14)(7x10)(1x12)A", 0, true).length,
-  241920,
-);
+assert.strictEqual(expand("(27x12)(20x12)(13x14)(7x10)(1x12)A", true), 241920);
 
 async function mainB() {
   let total = 0;
   for await (const line of getLines("./input.txt")) {
-    total += expand(line, 0, true).length;
+    console.log(total);
+    total += expand(line, true);
   }
   return total;
 }
