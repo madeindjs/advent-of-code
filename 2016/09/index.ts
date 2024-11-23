@@ -63,19 +63,44 @@ async function mainA() {
 
 assert.strictEqual(await mainA(), 115118);
 // ---
+
+// ---
+
+function expand2(string: string): number {
+  const weights = new Array(string.length).fill(1);
+  let count = 0;
+
+  for (let i = 0; i < string.length; i++) {
+    if (string.at(i) === "(") {
+      const closeIndex = string.indexOf(")", i);
+      const [range, qty] = string
+        .substring(i + 1, closeIndex)
+        .split("x")
+        .map(Number);
+
+      for (let j = 0; j < range; j++) {
+        weights[j + closeIndex + 1] *= qty;
+      }
+      i = closeIndex;
+    } else {
+      count += weights[i];
+    }
+  }
+
+  return count;
+}
 assert.strictEqual(
-  expand("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN", true),
+  expand2("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN"),
   445,
 );
-assert.strictEqual(expand("(27x12)(20x12)(13x14)(7x10)(1x12)A", true), 241920);
+assert.strictEqual(expand2("(27x12)(20x12)(13x14)(7x10)(1x12)A", true), 241920);
 
 async function mainB() {
   let total = 0;
   for await (const line of getLines("./input.txt")) {
-    console.log(total);
-    total += expand(line, true);
+    total += expand2(line);
   }
   return total;
 }
 
-assert.strictEqual(await mainB(), 0);
+assert.strictEqual(await mainB(), 11107527530);
