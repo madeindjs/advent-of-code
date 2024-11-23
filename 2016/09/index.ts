@@ -2,7 +2,7 @@ import assert from "assert";
 import { createReadStream } from "node:fs";
 import readline from "node:readline";
 
-function expand(string: string, pos = 0) {
+function expand(string: string, pos = 0, expandExpanded = false) {
   let openIndex = -1;
 
   for (let i = pos; i < string.length; i++) {
@@ -27,9 +27,9 @@ function expand(string: string, pos = 0) {
 
       // i = openIndex;
       openIndex = -1;
-      i = `${before}${repeated}`.length - 1;
+      i = expandExpanded ? openIndex : `${before}${repeated}`.length - 1;
 
-      console.log(range, qty, repeated);
+      // console.log(range, qty, repeated);
     }
   }
   return string;
@@ -54,3 +54,23 @@ async function mainA() {
 }
 
 assert.strictEqual(await mainA(), 115118);
+// ---
+assert.strictEqual(
+  expand("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN", 0, true)
+    .length,
+  445,
+);
+assert.strictEqual(
+  expand("(27x12)(20x12)(13x14)(7x10)(1x12)A", 0, true).length,
+  241920,
+);
+
+async function mainB() {
+  let total = 0;
+  for await (const line of getLines("./input.txt")) {
+    total += expand(line, 0, true).length;
+  }
+  return total;
+}
+
+assert.strictEqual(await mainB(), 0);
