@@ -7,24 +7,52 @@ function getLines(path: string) {
   return readline.createInterface({ input: createReadStream(file) });
 }
 
-const left: number[] = [];
-const right: number[] = [];
+async function getLists() {
+  const left: number[] = [];
+  const right: number[] = [];
 
-for await (const line of getLines("./input.txt")) {
-  const [l, r] = line.split(/ +/).map(Number);
-  left.push(l);
-  right.push(r);
+  for await (const line of getLines("./input.txt")) {
+    const [l, r] = line.split(/ +/).map(Number);
+    left.push(l);
+    right.push(r);
+  }
+  return [left, right];
 }
 
-left.sort((a, b) => a - b);
-right.sort((a, b) => a - b);
+async function mainA() {
+  const [left, right] = await getLists();
 
-let total = 0;
+  left.sort((a, b) => a - b);
+  right.sort((a, b) => a - b);
 
-while (left.length > 0) {
-  const l = left.pop() ?? 0;
-  const r = right.pop() ?? 0;
-  total += Math.abs(l - r);
+  let total = 0;
+
+  while (left.length > 0) {
+    const l = left.pop() ?? 0;
+    const r = right.pop() ?? 0;
+    total += Math.abs(l - r);
+  }
+  return total;
 }
 
-console.log(total);
+assert.strictEqual(await mainA(), 2904518);
+
+function getSideObj(vals: number[]) {
+  return vals.reduce((acc, v) => {
+    acc.set(v, (acc.get(v) ?? 0) + 1);
+    return acc;
+  }, new Map<number, number>());
+}
+async function mainB() {
+  const [left, right] = (await getLists()).map(getSideObj);
+
+  let total = 0;
+  for (const [k, v] of left.entries()) {
+    total += v * k * (right.get(k) ?? 0);
+  }
+
+  return total;
+}
+
+assert.strictEqual(await mainA(), 2904518);
+assert.strictEqual(await mainB(), 18650129);
