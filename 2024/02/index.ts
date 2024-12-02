@@ -7,7 +7,7 @@ function getLines(path: string) {
   return readline.createInterface({ input: createReadStream(file) });
 }
 
-function isSafe(levels: number[], tolerance = 0): boolean {
+function isSafe(levels: number[]): boolean {
   const isGrowing = levels[1] - levels[0] > 0;
 
   for (let i = 1; i < levels.length; i++) {
@@ -19,33 +19,28 @@ function isSafe(levels: number[], tolerance = 0): boolean {
 
     const isSequence = isGrowing ? curr > prev : curr < prev;
 
-    if (!isSequence || !isDistanceOk) {
-      if (tolerance === 0) return false;
-
-      return [i - 1, i].some((j) =>
-        isSafe(levels.toSpliced(j, 1), tolerance - 1),
-      );
-    }
+    if (!isSequence || !isDistanceOk) return false;
   }
 
   return true;
 }
-assert.strictEqual(isSafe("7 6 4 2 1".split(" ").map(Number)), true);
-assert.strictEqual(isSafe("6 6 4 2 1".split(" ").map(Number), 1), true);
-assert.strictEqual(isSafe("1 3 2 4 5".split(" ").map(Number), 1), true);
-assert.strictEqual(isSafe("8 6 4 4 1".split(" ").map(Number), 1), true);
 
-async function main(path: string, tolerance = 0) {
+async function main(path: string, isSafe: (levels: number[]) => boolean) {
   let count = 0;
   for await (const line of getLines(path)) {
     const levels = line.split(" ").map(Number);
-    if (isSafe(levels, tolerance)) count++;
+    if (isSafe(levels)) count++;
   }
   return count;
 }
 
-assert.strictEqual(await main("./spec.txt"), 2);
-assert.strictEqual(await main("./input.txt"), 663);
+assert.strictEqual(await main("./spec.txt", isSafe), 2);
+assert.strictEqual(await main("./input.txt", isSafe), 663);
 
-assert.strictEqual(await main("./spec.txt", 1), 4);
-assert.strictEqual(await main("./input.txt", 1), 0); //681,691 too low
+function isSafe2(levels: number[]): boolean {
+  if (isSafe(levels)) return true;
+  return levels.some((_, i) => isSafe(levels.toSpliced(i, 1)));
+}
+
+assert.strictEqual(await main("./spec.txt", isSafe2), 4);
+assert.strictEqual(await main("./input.txt", isSafe2), 692);
