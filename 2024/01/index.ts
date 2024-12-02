@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "node:assert";
 import { createReadStream } from "node:fs";
 import readline from "node:readline";
 
@@ -20,19 +20,11 @@ async function getLists() {
 }
 
 async function mainA() {
-  const [left, right] = await getLists();
+  const [left, right] = (await getLists()).map((n) =>
+    n.toSorted((a, b) => a - b),
+  );
 
-  left.sort((a, b) => a - b);
-  right.sort((a, b) => a - b);
-
-  let total = 0;
-
-  while (left.length > 0) {
-    const l = left.pop() ?? 0;
-    const r = right.pop() ?? 0;
-    total += Math.abs(l - r);
-  }
-  return total;
+  return left.reduce((acc, l, i) => acc + Math.abs(l - (right.at(i) ?? 0)), 0);
 }
 
 assert.strictEqual(await mainA(), 2904518);
@@ -47,9 +39,7 @@ async function mainB() {
   const [left, right] = (await getLists()).map(getSideObj);
 
   let total = 0;
-  for (const [k, v] of left.entries()) {
-    total += v * k * (right.get(k) ?? 0);
-  }
+  for (const [k, v] of left.entries()) total += v * k * (right.get(k) ?? 0);
 
   return total;
 }
