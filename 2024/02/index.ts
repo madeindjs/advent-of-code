@@ -1,11 +1,5 @@
-import assert from "assert";
-import { createReadStream } from "node:fs";
-import readline from "node:readline";
-
-function getLines(path: string) {
-  const file = new URL(path, import.meta.url);
-  return readline.createInterface({ input: createReadStream(file) });
-}
+import assert from "node:assert";
+import { open } from "node:fs/promises";
 
 function isSafe(levels: number[]): boolean {
   const isGrowing = levels[1] - levels[0] > 0;
@@ -16,7 +10,6 @@ function isSafe(levels: number[]): boolean {
 
     const dist = Math.abs(prev - curr);
     const isDistanceOk = dist >= 1 && dist <= 3;
-
     const isSequence = isGrowing ? curr > prev : curr < prev;
 
     if (!isSequence || !isDistanceOk) return false;
@@ -26,8 +19,9 @@ function isSafe(levels: number[]): boolean {
 }
 
 async function main(path: string, isSafe: (levels: number[]) => boolean) {
+  const file = await open(new URL(path, import.meta.url));
   let count = 0;
-  for await (const line of getLines(path)) {
+  for await (const line of file.readLines()) {
     const levels = line.split(" ").map(Number);
     if (isSafe(levels)) count++;
   }
