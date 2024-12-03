@@ -13,8 +13,8 @@ function mainA(line: string) {
 function mainB(line: string): number {
   const lineWithoutDont = line
     .replaceAll("\n", "")
-    .replaceAll(/don't\(\).*?(do\(\))/g, "")
-    .replaceAll(/don't\(\).*/g, "");
+    .replaceAll(/don't\(\).*?(do\(\))/g, "") // replace inside "don't/do"
+    .replaceAll(/don't\(\).*/g, ""); // replace ending "don't"
   return mainA(lineWithoutDont);
 }
 
