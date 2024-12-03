@@ -5,11 +5,9 @@ const inputFile = new URL("./input.txt", import.meta.url);
 const input = await readFile(inputFile, { encoding: "utf8" });
 
 function mainA(line: string) {
-  let total = 0;
-  for (const match of line.matchAll(/mul\((\d{1,3}),(\d{1,3})\)/g)) {
-    total += Number(match[1]) * Number(match[2]);
-  }
-  return total;
+  return line
+    .matchAll(/mul\((\d{1,3}),(\d{1,3})\)/g)
+    .reduce((acc, v) => acc + Number(v[1]) * Number(v[2]), 0);
 }
 
 function mainB(line: string): number {
