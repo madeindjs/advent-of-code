@@ -18,14 +18,12 @@ function translatePoint([x, y]: Point, [tx, ty]: Point): Point {
 }
 
 function isXmas(grid: Grid, point: Point, direction: Point) {
-  let res = "";
-  for (let i = 0; i < 4; i++) {
-    const cell = grid[point[0]]?.[point[1]];
-    if (cell === undefined) return false;
-    res += cell;
+  const xmas = "XMAS";
+  for (let i = 0; i < xmas.length; i++) {
+    if (getCell(grid, point) !== xmas.at(i)) return false;
     point = translatePoint(point, direction);
   }
-  return res === "XMAS";
+  return true;
 }
 
 const DIRECTIONS: Point[] = [
@@ -51,15 +49,10 @@ function getCell(grid: Grid, [x, y]: Point) {
 
 async function mainA(path: string) {
   const grid = await getGrid(path);
-  let total = 0;
 
-  for (const start of findPoints(grid, "X")) {
-    for (const direction of DIRECTIONS) {
-      if (isXmas(grid, start, direction)) total++;
-    }
-  }
-
-  return total;
+  return findPoints(grid, "X")
+    .map((point) => DIRECTIONS.filter((dir) => isXmas(grid, point, dir)).length)
+    .reduce((acc, v) => acc + v, 0);
 }
 
 assert.strictEqual(await mainA("./spec.txt"), 18);
