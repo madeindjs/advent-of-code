@@ -39,12 +39,18 @@ const DIRECTIONS: Point[] = [
   [1, 1],
 ];
 
-async function mainA(path: string) {
+async function getGrid(path: string) {
   const inputFile = new URL(path, import.meta.url);
   const input = await readFile(inputFile, { encoding: "utf8" });
+  return input.split("\n") as Grid;
+}
 
-  const grid = input.split("\n") as Grid;
+function getCell(grid: Grid, [x, y]: Point) {
+  return grid[x]?.[y];
+}
 
+async function mainA(path: string) {
+  const grid = await getGrid(path);
   let total = 0;
 
   for (const start of findPoints(grid, "X")) {
@@ -56,6 +62,29 @@ async function mainA(path: string) {
   return total;
 }
 
-assert.strictEqual(await mainA("./spec2.txt"), 4);
 assert.strictEqual(await mainA("./spec.txt"), 18);
 assert.strictEqual(await mainA("./input.txt"), 2427);
+
+async function mainB(path: string) {
+  const grid = await getGrid(path);
+  let total = 0;
+  const isMs = (str: string) => str === "MS" || str === "SM";
+
+  for (const point of findPoints(grid, "A")) {
+    const word1 = [
+      getCell(grid, translatePoint(point, [-1, -1])),
+      getCell(grid, translatePoint(point, [1, 1])),
+    ].join("");
+    const word2 = [
+      getCell(grid, translatePoint(point, [1, -1])),
+      getCell(grid, translatePoint(point, [-1, 1])),
+    ].join("");
+
+    if (isMs(word1) && isMs(word2)) total++;
+  }
+
+  return total;
+}
+
+assert.strictEqual(await mainB("./spec.txt"), 9);
+assert.strictEqual(await mainB("./input.txt"), 1900);
