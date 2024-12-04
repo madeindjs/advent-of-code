@@ -4,86 +4,58 @@ import { readFile } from "node:fs/promises";
 type Grid = string[];
 type Point = [number, number];
 
-function getGridDiagonal(
-  grid: Grid,
-  xStart: number,
-  yStart: number,
-  direction: (v: number) => number,
-) {
-  const text: string[] = [];
-  let x = xStart;
-  let y = yStart;
-  while (grid[x]?.[y] !== undefined) {
-    text.push(grid[x]?.[y]);
-    x = direction(x);
-    y++;
-  }
-  return text.join("");
-}
-
-function getBorderPoints(grid: Grid) {
-  const yMax = grid[0]!.length - 1;
-  const xMax = grid.length - 1;
-
-  const points = new Set<string>();
-
-  for (let x = 0; x <= xMax; x++) {
-    points.add([x, 0].join());
-    points.add([x, yMax].join());
-  }
-  for (let y = 0; y <= yMax; y++) {
-    points.add([0, y].join());
-    points.add([xMax, y].join());
-  }
-
-  return points.values().map((p) => p.split(",").map(Number));
-}
-
-// 123
-// 456
-// 789
-const exampleGrid: Grid = ["123", "456", "789"];
-assert.deepStrictEqual(
-  getGridDiagonal(exampleGrid, 0, 0, (v) => v + 1),
-  "159",
-);
-
-function* getLines(grid: Grid): Generator<string> {
-  const yMax = grid[0]!.length - 1;
-  const xMax = grid.length - 1;
-
-  // rows
-  for (const row of grid) {
-    yield row;
-  }
-  // colums
-  for (let x = 0; x <= xMax; x++) {
-    yield grid.map((row) => row[x]!).join("");
-  }
-  // diag
-  for (const [x, y] of getBorderPoints(grid)) {
-    yield getGridDiagonal(grid, x, y, (v) => v + 1);
-    yield getGridDiagonal(grid, x, y, (v) => v - 1);
+function* findPoints(grid: Grid, value: string): Generator<Point> {
+  for (let x = 0; x < grid.length; x++) {
+    const row = grid[x];
+    for (let y = 0; y < row.length; y++) {
+      if (row[y] === value) yield [x, y];
+    }
   }
 }
-function countRegex(str: string, re: RegExp): number {
-  return (str.match(re) ?? []).length;
+
+function translatePoint([x, y]: Point, [tx, ty]: Point): Point {
+  return [x + tx, y + ty];
 }
-assert.strictEqual(countRegex("A.A.A", /A/g), 3);
+
+function isXmas(grid: Grid, point: Point, direction: Point) {
+  let res = "";
+  for (let i = 0; i < 4; i++) {
+    const cell = grid[point[0]]?.[point[1]];
+    if (cell === undefined) return false;
+    res += cell;
+    point = translatePoint(point, direction);
+  }
+  return res === "XMAS";
+}
+
+const DIRECTIONS: Point[] = [
+  [0, 1],
+  [0, -1],
+  [1, 0],
+  [-1, 0],
+  [-1, -1],
+  [-1, 1],
+  [1, -1],
+  [1, 1],
+];
 
 async function mainA(path: string) {
   const inputFile = new URL(path, import.meta.url);
   const input = await readFile(inputFile, { encoding: "utf8" });
 
   const grid = input.split("\n") as Grid;
-  return getLines(grid)
-    .filter((line) => {
-      // console.log(line.match(/xmas/));
-      return true;
-    })
-    .map((line) => countRegex(line, /XMAS/g) + countRegex(line, /SAMX/g))
-    .reduce((acc, v) => acc + v, 0);
+
+  let total = 0;
+
+  for (const start of findPoints(grid, "X")) {
+    for (const direction of DIRECTIONS) {
+      if (isXmas(grid, start, direction)) total++;
+    }
+  }
+
+  return total;
 }
 
 assert.strictEqual(await mainA("./spec2.txt"), 4);
 assert.strictEqual(await mainA("./spec.txt"), 18);
+assert.strictEqual(await mainA("./input.txt"), 2427);
