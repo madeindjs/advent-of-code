@@ -23,20 +23,20 @@ function getMiddleArray<T>(arr: T[]): T | undefined {
   return arr.at(Math.floor(arr.length / 2));
 }
 
+function getCorrectOrder(page: Page, rules: Rule[]): Page {
+  return page.toSorted((a, b) => {
+    const rule = rules.find((rule) => rule.includes(a) && rule.includes(b));
+    if (rule === undefined) return 0;
+    return a === rule[0] ? -1 : 1;
+  });
+}
+
 async function mainA(path: string) {
   const input = await getInput(path);
-
   let total = 0;
 
   for (const page of input.pages) {
-    const sorted = page.toSorted((a, b) => {
-      const rule = input.rules.find(
-        (rule) => rule.includes(a) && rule.includes(b),
-      );
-      if (rule === undefined) return 0;
-      return a === rule[0] ? -1 : 1;
-    });
-
+    const sorted = getCorrectOrder(page, input.rules);
     if (sorted.join() === page.join()) {
       total += Number(getMiddleArray(sorted));
     }
@@ -46,3 +46,19 @@ async function mainA(path: string) {
 
 assert.strictEqual(await mainA("./spec.txt"), 143);
 assert.strictEqual(await mainA("./input.txt"), 6242);
+
+async function mainB(path: string) {
+  const input = await getInput(path);
+  let total = 0;
+
+  for (const page of input.pages) {
+    const sorted = getCorrectOrder(page, input.rules);
+    if (sorted.join() !== page.join()) {
+      total += Number(getMiddleArray(sorted));
+    }
+  }
+  return total;
+}
+
+assert.strictEqual(await mainB("./spec.txt"), 123);
+assert.strictEqual(await mainB("./input.txt"), 5169);
