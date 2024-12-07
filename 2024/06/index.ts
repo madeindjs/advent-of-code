@@ -48,33 +48,72 @@ async function getGrid(path: string) {
   const input = await readFile(inputFile, { encoding: "utf8" });
   return input.split("\n") as Grid;
 }
-async function mainA(path: string) {
-  const grid = await getGrid(path);
 
-  let point = findPoint(grid, "^");
-  if (point === undefined) throw Error();
+function* walk(
+  grid: Grid,
+  point: Point,
+  direction: Direction = "N",
+  extraBlock?: Point,
+): Generator<[Point, Direction], boolean> {
+  const seq = new Set<string>();
+  seq.add(`${point[0]},${point[1]},${direction}`);
 
-  let direction: Direction = "N";
-
-  const seq = new Set<string>([point.join()]);
-
-  while (getCell(grid, point) !== undefined) {
+  while (true) {
     const next = translatePoint(point, DIRECTIONS[direction]);
+    const nextKey = `${next[0]},${next[1]},${direction}`;
     const cell = getCell(grid, next);
 
-    if (cell === "#") {
+    if (seq.has(nextKey)) return true;
+
+    if (cell === "#" || next.join() === extraBlock?.join()) {
       direction = turn(direction);
     } else if (cell === undefined) {
-      console.log(seq);
-      return seq.size;
+      return false;
     } else {
-      seq.add(next.join());
+      yield [next, direction];
       point = next;
+      seq.add(nextKey);
     }
   }
+}
 
+async function mainA(path: string) {
+  const grid = await getGrid(path);
+  let point = findPoint(grid, "^")!;
+
+  const seq = new Set<string>([point.join()]);
+  for (const [p] of walk(grid, point)) seq.add(p.join());
   return seq.size;
 }
 
 assert.strictEqual(await mainA("./spec.txt"), 41);
-assert.strictEqual(await mainA("./input.txt"), 0);
+assert.strictEqual(await mainA("./input.txt"), 5329);
+
+function getGeneratorReturn<T>(gen: Generator<unknown, T>): T {
+  let result;
+  while (!(result = gen.next()).done) {}
+  return result.value;
+}
+
+async function mainB(path: string) {
+  const grid = await getGrid(path);
+
+  let point = findPoint(grid, "^")!;
+  const points = new Set<string>();
+
+  for (const [p, direction] of walk(grid, point)) {
+    const newBlock = translatePoint(p, DIRECTIONS[direction]);
+    const newGen = walk(grid, point, direction, newBlock);
+    const isInfinite = getGeneratorReturn(newGen);
+    if (isInfinite) {
+      console.log(newBlock);
+
+      points.add(newBlock.join());
+    }
+  }
+
+  return points.size;
+}
+
+assert.strictEqual(await mainB("./spec.txt"), 6);
+assert.strictEqual(await mainB("./input.txt"), 5329);
